@@ -1,0 +1,21 @@
+#!/bin/bash
+set -eux -o pipefail
+
+# $1 is the b64 public key.
+# $2 is the quarantine file path.
+PUBKEY=$1
+QUARANTINE_FILE=$2
+echo $PUBKEY is vouching for $QUARANTINE_FILE
+# the keypoint packet is written to stdin.
+# I.e. if the `lk` (linkspace cli) is installed: 
+if [ -x "$(command -v lk )" ]; then 
+    # The path we print here is the ABE encoded string, not the URI encoded one
+    lk printf "Its result will be something like [path:str]?hash=[hash:str]"
+fi
+
+# The quarantine has already been copied.
+# You can delete or move it.
+rm "$2" || true
+
+# any non zero return value will deny the packet
+exit 0

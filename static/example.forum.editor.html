@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8">
+</head>
+
+<body>
+    <form>
+        <div>
+            <label>Community </label>
+            <input type="text" placeholder="community" id="community" value="webbit" />
+        </div>
+        <div>
+            <label>Title</label>
+            <input type="text" placeholder="Post title" id="title" />
+        </div>
+        <div>
+            <label>Text</label>
+            <textarea placeholder="Say something interesting" id="text"></textarea>
+        </div>
+        <input id="submit" type="button" value="submit" />
+    </form>
+
+    <script>
+        document.querySelector("#submit").addEventListener("click", submit);
+        async function submit(e) {
+            // This is where the tricky part comes in. 
+            // We have to submit a page that allows other people to comment. 
+            // (Currently the simplest way to debug a new editor your building is to over write the ./template/html_editor.html file)
+            var [community, title, text] = ["#community", "#title", "#text"].map(id => document.querySelector(id).value);
+
+
+            const cyrb53 = (str, seed = 0) => {
+                let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+                for(let i = 0, ch; i < str.length; i++) {
+                    ch = str.charCodeAt(i);
+                    h1 = Math.imul(h1 ^ ch, 2654435761);
+                    h2 = Math.imul(h2 ^ ch, 1597334677);
+                }
+                h1  = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+                h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+                h2  = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+                h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+                
+                return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+            };
+            let post_id= cyrb53(title + text)
+
+            let dest = window.location.origin + `/basic_forum/${community}/${post_id}/${title}.html`
+            let body = build_post_page(community, title, text, post_id);
+            fetch(dest, {
+                    body,
+                    method: "POST"
+                })
+                .then(async (response) => {
+                    if (!response.ok) {
+                        let body = await response.text();
+                        throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
+                    }
+                    window.open(response.headers.get("location"));
+                })
+                .catch(e => console.warn(e) && alert(e));
+            return false;
+        }
+
+
+        function build_post_page(community, title, text, post_id) {
+            // We're going to stringify this and include it in our post page so others can comment.
+            function script() {
+                function main() {
+                    let commentsUrl = window.location.origin + window.location.pathname + "/comments";
+                    function submit() {
+                        let body = document.querySelector("#text").value;
+                        fetch(commentsUrl , {
+                                body,
+                                method: "POST"
+                            })
+                            .then(async (response) => {
+                                if (!response.ok) {
+                                    let body = await response.text();
+                                    throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
+                                }
+                                window.open(response.headers.get("location") + `&back=${window.location.href})`)
+                            })
+                            .catch(e => console.warn(e) && alert(e));
+                        return false;
+                    }
+                     document.querySelector("#submit").addEventListener("click", submit);
+                    const range = document.createRange();
+
+                    async function load_comments(){
+                        fetch(commentsUrl + "?list", {headers: { "Accept": "application/json"  }})
+                        .then(async (response) => {
+                            let body = await response.json();
+                            let commentsEl= document.querySelector("#comments");
+                            body.sort((a, b) => (BigInt(a.create) > BigInt(b.create)) ? 1 : -1 );
+
+                            for (comment of body ){
+                                let el = range.createContextualFragment("<div> loading  </div>").firstElementChild;
+                                commentsEl.appendChild(el);
+                                fetch(commentsUrl+"?hash="+comment.hash).then(async (response) => {
+                                    el.innerHTML = await response.text() ;
+                                });
+                                debugger;
+                            }
+                            console.log(body);
+                            debugger;
+                        })
+                        .catch(e => console.warn(e) && alert(e));
+                    }
+                    load_comments();
+                }
+                // At some point It would be much clearer if we'd use <script src=...?pubkey=...>.
+                // That way, each script can be updated seperatly 
+                return `<thing>${main.toString()} ;main();</thing>`.replace(/thing/g, "script");
+            }
+            let str = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head>
+         </head>
+         <body>
+         <h1> ${title}</h1>
+         <p> ${text}</p>
+         <h4>${community}/${post_id}/${title}</h4>
+         <textarea id="text" placeholder="Say something nice"></textarea>
+<input id="submit" type="button" value="submit">
+         <div id="comments"></div>
+         </body>
+         ${script()}
+         </html>`;
+            return str;
+        }
+    </script>
+</body>
+
+</html>

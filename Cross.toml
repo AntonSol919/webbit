@@ -1,0 +1,4 @@
+[target.i686-unknown-linux-gnu]
+zig = "2.12"
+[target.i686-unknown-linux-musl]
+zig = "2.12"
