@@ -27,9 +27,8 @@
         async function submit(e) {
             // This is where the tricky part comes in. 
             // We have to submit a page that allows other people to comment. 
-            // (Currently the simplest way to debug a new editor your building is to over write the ./template/html_editor.html file)
+            // A page placed in /static/ is always served first, so you can use it for development.
             var [community, title, text] = ["#community", "#title", "#text"].map(id => document.querySelector(id).value);
-
 
             const cyrb53 = (str, seed = 0) => {
                 let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
