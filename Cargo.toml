@@ -10,6 +10,6 @@ edition = "2021"
 anyhow = "1.0.71"
 rocket = "=0.5.0-rc.3"
 
-linkspace = {path = "../linkspace/crates/linkspace"}
+linkspace = {git= "https://github.com/AntonSol919/linkspace"}
 
 tokio = { version = "1.28.2", features = ["process"] }
