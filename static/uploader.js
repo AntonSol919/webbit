@@ -41,10 +41,10 @@ justify-content: center;
 <div comment="this div will be automatically dropped on upload" id="webbit" style="${out_style}" contentEditable="false">
 <div style="${form_style}"> 
 
-  <label>DM:</label> <input type="checkbox" id="webbitDesignMode" />
+  <label>edit:</label> <input type="checkbox" id="webbitDesignMode" />
   <label>Destination:</label> <div contenteditable id="webbitPath"> ${window.location.pathname}</div>
   <button id="webbitUpload">Upload</button>
-  <a href="https://github.com/AntonSol919/webbit">About</a>
+  <a href="/about.html">About</a>
 </div>
   <div id="webbitErrors" style="  flex-basis: 100%;"></div>
 </div>

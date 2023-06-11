@@ -28,8 +28,9 @@ For example [http://webbit.alinkspace.org/some_page.html]
 
 Thats not a question?
 
-But luckily you don't have to use that editor. Any URL starting with /webbit/ and ending in '.html' can be edited in a different way.
-Add ?uploader to any page, press F12 and edit it using the browser tools.
+But luckily you don't have to use that editor. 
+Any URL starting with webbit. and ending in .html can be edited.
+Just add ?uploader to the URL and press F12  and edit it using the browser tools (or check the box and start typing).
 
 > That's not a very user friendly editor
 
@@ -46,8 +47,9 @@ Or ~steal~ borrow something a little less offensive from another page.
 
 > Cool, but what about comments. Every good website has comments.
 
-Create a page -> to create a page -> to create comments. [./static/example.forum.editor.html]
+Isn't it obvious? 
 
+Create a page -> to create a page -> to create comments. [./static/example.forum.editor.html]
 
 > So you made javascript injections attacks a feature?
 
