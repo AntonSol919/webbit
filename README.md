@@ -1,26 +1,27 @@
-⚠️This is all very much a prototype.⚠️
+⚠️This is very much a prototype.⚠️
 
 # Webbit - Crowdsourcing<sup>2</sup>
 
 As you've probably heard, `<Social App>` is about to `<shit the bed | abuse their position>`.
 Anyone whose been around for a while can see the similarities with `<other fuckup>`,
-and who can forget that big controversy `<random.randrange(2004,2025)>`
+and who can forget that big controversy in the year `<random.randrange(2004,2025)>`
 
 ## What is Webbit?
 
-~A quick and dirty hack to get a markup language (html) into [linkspace](https://www.linkspace.dev)~  
-~A new kind of platform.~  
-~The ultimate code gulf challange~  
-~A dumpster fire waiting to happen~  
-
-A self-improving POC?
-
+- ~A quick and dirty hack to get a markup language (html) into [linkspace](https://www.linkspace.dev)~  
+- ~A new kind of platform.~  
+- ~The ultimate code gulf challange~  
+- ~A dumpster fire waiting to happen~  
+- ~A self-improving POC?~
+- ~I don't know.~
+- Whatever you make of it
+    
 Open a page, edit it, save it.
 
 > What page?
 
 Goto any webbit page ending in .html
-For example [http://webbit.alinkspace.org/some_page.html]
+For example [http://webbit.alinkspace.org/some_page.html](http://webbit.alinkspace.org/some_page.html)
 
 (Ok this one URL is a bit special because its pinned and wont update, but any other path_name.html url can be edited!)
 
@@ -49,7 +50,7 @@ Or ~steal~ borrow something a little less offensive from another page.
 
 Isn't it obvious? 
 
-Create a page -> to create a page -> to create comments. [./static/example.forum.editor.html]
+Create a page -> to create a page -> to create comments. [example.forum.editor.html](./static/example.forum.editor.html)
 
 > So you made javascript injections attacks a feature?
 
