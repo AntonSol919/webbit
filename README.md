@@ -1,6 +1,6 @@
 ⚠️This is all very much a prototype.⚠️
 
-# Weddit - Crowdsourcing^{2}
+# Webbit - Crowdsourcing<sup>2</sup>
 
 As you've probably heard, `<Social App>` is about to `<shit the bed | abuse their position>`.
 Anyone whose been around for a while can see the similarities with `<other fuckup>`,
