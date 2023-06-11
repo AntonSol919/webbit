@@ -80,7 +80,7 @@ The root issue with `[Social App]` is:
 - and you explicitly agreed that the host has final and total administrative control
 - and the host inevitably wants to leverage that position.
 
-Webbit is a [linkspace](www.linkspace.dev) application. Linkspace is a supernet (Think 'like Git' but for everything but code).
+Webbit is a [linkspace](https://www.linkspace.dev) application. Linkspace is a supernet (Think 'like Git' but for everything but code).
 If for whatever reason you think i'm a trash host, you just have to find a different way to talk _about_ the data.
 
 Because at the end of the day, data is fungible and you only need a way to reuse and reshare.
