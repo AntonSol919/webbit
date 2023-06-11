@@ -10,7 +10,7 @@ and who can forget that big controversy in the year `<random.randrange(2004,2025
 
 - ~A quick and dirty hack to get a markup language (html) into [linkspace](https://www.linkspace.dev)~  
 - ~A new kind of platform.~  
-- ~The ultimate code gulf challange~  
+- ~The ultimate code golf challange~  
 - ~A dumpster fire waiting to happen~  
 - ~A self-improving POC?~
 - ~I don't know.~
