@@ -150,7 +150,7 @@
                     fetch(vouchUrl, {
                         body: lk_write(keyp),
                         method: "POST"
-                    }).then(response => {
+                    }).then(async response => {
                         if (!response.ok) {
                             let body = await response.text();
                             throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
