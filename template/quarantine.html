@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -53,7 +54,8 @@
 
     async function load_pkts(response) {
         if (!response.ok) {
-            return alert(`Error - ${response.status} - ${response.statusText}`);
+            let body = await response.text();
+            return alert(`Error - ${response.status} - ${response.statusText} - ${body}`);
         }
         let blob = await response.blob();
         let buf = await blob.arrayBuffer();
@@ -150,7 +152,8 @@
                         method: "POST"
                     }).then(response => {
                         if (!response.ok) {
-                            throw Error(`Server returned ${response.status}: ${response.statusText}`);
+                            let body = await response.text();
+                            throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
                         }
                         let new_loc = back ? back : response.headers.get("location");
                         window.location = new_loc;

@@ -5,10 +5,10 @@ version = 3
 [[package]]
 name = "abe"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "anyhow",
  "arrayvec",
+ "bstr",
  "hex",
  "serde",
  "thiserror",
@@ -358,6 +358,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a246e68bb43f6cd9db24bea052a53e40405417c5fb372e3d1a8a7f770a564ef5"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -366,7 +375,6 @@ checksum = "a3e2c3daef883ecc1b5d58c15adae93470a91d425f3532ba1695849656af3fc1"
 [[package]]
 name = "byte-fmt"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "abe",
  "base64 0.21.0",
@@ -1123,7 +1131,6 @@ dependencies = [
 [[package]]
 name = "ipcbus"
 version = "0.1.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "event-listener",
  "fslock",
@@ -1208,7 +1215,6 @@ checksum = "6a987beff54b60ffa6d51982e1aa1146bc42f19bd26be28b0586f252fccf5317"
 [[package]]
 name = "linkspace"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "anyhow",
  "backtrace",
@@ -1219,7 +1225,6 @@ dependencies = [
 [[package]]
 name = "linkspace-argon2-identity"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "base64 0.21.0",
  "linkspace-cryptography",
@@ -1230,7 +1235,6 @@ dependencies = [
 [[package]]
 name = "linkspace-common"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "abe",
  "anyhow",
@@ -1255,7 +1259,6 @@ dependencies = [
 [[package]]
 name = "linkspace-core"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1277,7 +1280,6 @@ dependencies = [
 [[package]]
 name = "linkspace-cryptography"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "blake3",
  "getrandom",
@@ -1290,12 +1292,12 @@ dependencies = [
 [[package]]
 name = "linkspace-pkt"
 version = "0.3.0"
-source = "git+https://github.com/AntonSol919/linkspace#ecfe268eaa4b2be08c8e1adbbff245ce588f0f2b"
 dependencies = [
  "anyhow",
  "arrayvec",
  "auto_impl",
  "bitflags 1.3.2",
+ "bstr",
  "byte-fmt",
  "bytes",
  "linkspace-cryptography",
@@ -2668,6 +2670,8 @@ dependencies = [
  "linkspace",
  "rocket",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

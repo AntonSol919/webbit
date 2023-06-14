@@ -9,7 +9,7 @@ use anyhow::{anyhow, Context};
 use linkspace::{
     lk_query, lk_query_push,
     prelude::{now, LkHash, NetPkt, NetPktPtr, Point, PointExt},
-    runtime::{ lk_save_all},
+    runtime::{ lk_save_all}, lk_process,
 };
 use rocket::{
     data::Capped,
@@ -189,14 +189,14 @@ async fn vouch(
     pkts: Pkts<'_>,
     lk: &State<Lk>,
 ) -> Result<Either<(Status, &'static str), Created<String>>> {
-    // this should be guards i think?
+    // this could prob be request guards.
     let pkts = pkts.0;
     if pkts.len() != 1 {
         return Ok(Either::Left((Status::BadRequest, "expected 1 packet")));
     }
 
     let keypoint = &pkts[0];
-    use linkspace::prelude::NetPktExt;
+    use linkspace::prelude::{PktFmt,NetPktExt};
     let kp_hash = keypoint.hash();
 
     if !keypoint.is_keypoint() {
@@ -206,6 +206,7 @@ async fn vouch(
     let pktbytes = tokio::fs::read(format!("./quarantine/{}", hash.0)).await?;
     let mut it = iter_pkts_unchecked(&pktbytes);
     let linkpoint = it.next().context("quarantine error")?;
+    tracing::trace!(linkpoint=%PktFmt(&linkpoint),keypoint=%PktFmt(&keypoint),"checking equality");
     if linkpoint.group() != keypoint.group()
         || linkpoint.domain() != keypoint.domain()
         || linkpoint.path() != keypoint.path()
@@ -228,7 +229,11 @@ async fn vouch(
         .map(|p| &*p as &dyn NetPkt)
         .chain(Some(&*keypoint as &dyn NetPkt))
         .collect::<Vec<_>>();
-    lk_save_all(&lk.tlk(), &refs)?;
+    {
+        let lk = lk.tlk();
+        lk_save_all(&lk, &refs)?;
+        lk_process(&lk);
+    }
 
     let path = AnyIPath::new(linkpoint.get_ipath()).cast();
 
@@ -311,14 +316,17 @@ async fn save(_w:Webbit, ipath: AnyIPath, file: Capped<Vec<u8>>) -> Result<Eithe
             .into_iter()
             .chain(points.iter().flat_map(|p| p.byte_segments().io_slices()))
             .collect::<Vec<_>>();
-        file.write_all_vectored(&mut slices)
-            .context("write_vectored")?;
+        file.write_all_vectored(&mut slices).context("write_vectored")?;
+        file.flush()?;
+        tracing::trace!("write flush ok");
         Ok(linkpoint.hash())
     })
     .await??;
     let r : Option<String> = None;
     let qh = QUARANTINE.get().unwrap();
     let qh = qh[0].to_absolute("http", qh).unwrap();
+    tracing::trace!("Redirecting");
+
     Ok(Either::Left(Created::new(uri!(qh,quarantine(Hash(hash),r)).to_string())))
 }
 
