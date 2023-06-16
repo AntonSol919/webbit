@@ -3,7 +3,24 @@
 
 <head>
     <meta content="text/html;charset=utf8" http-equiv="Content-Type" />
+
+    <link rel="stylesheet" href="./linkspace-black-colorcodes.css">
+    <link rel="stylesheet" href="./linkspace-basic-black.css">
     <style>
+
+     html {
+         color: 	#f8f8f2;
+         box-sizing: border-box;
+         font-size: calc(15px + 0.390625vw);
+         background:#282a36;
+     }
+
+
+     body{
+         display:flex;
+         flex-flow:column;
+         align-items: flex-start;
+     }
 
      #form > div > label {
          display:inline-block;
@@ -14,7 +31,10 @@
 </head>
 
 <body>
-    <h3 style="color:red;background:yellow"> before entering a password check that the origin host contains the word 'quarantine' and that you trust this server</h3>
+    <h3 style="color:#ff5555;background:#f1fa8c;" id="warningHeader">
+        before entering a password check that the host starts with the word 'quarantine' and that you trust this server
+        <input id="hideWarningToggle" type="checkbox" /></div>
+    </h3>
     <div id="form">
         <div>
             <label>Lk ID</label> <input type="button" id="generateKey" value="new"/><input id="encryptedKey" name="username" type="text">
@@ -41,14 +61,15 @@
         lk_read,
         lk_write,
 
+        lk_encode,
+
         b64,
         Link,
         get_consts,
         build_info
-    } from './linkspace/linkspace.js'; 
+    } from './linkspace-dev/linkspace.js'; 
  // } from 'https://antonsol919.github.io/webbit/linkspace/linkspace.js';
 
-     console.log(build_info());
     function stripSuffix(st, suffix) {
         if (!st.endsWith(suffix)) throw `${st} does not end with ${suffix}`;
         return st.substr(0, st.length - suffix.length);
@@ -82,11 +103,11 @@
         let buf = await blob.arrayBuffer();
         let bytes = new Uint8Array(buf);
         window.linkspace = await init();
+        console.log(build_info());
         const {
             PUBLIC
         } = get_consts();
 
-        console.log(PUBLIC);
         let pkts = [];
         while (bytes.length != 0) {
             let [p, rest] = lk_read(bytes);
@@ -94,11 +115,11 @@
             pkts.push(p);
         }
         if (b64(pkts[0].hash) != linkp_hash) {
-            throw Error("(NoSec) Error - hash mismatch - ?");
+            logerr("(NoSec) Error - hash in url does not match the first pkt ?");
         }
-        console.log(pkts);
         return pkts;
     }
+
     let errors = newEl(`<div id="errors"></div>`);
     document.body.prepend(errors);
 
@@ -109,6 +130,8 @@
     function display_pkts(pkts) {
         let linkpkt = pkts[0];
         let {
+            warningHeader,
+            hideWarningToggle,
             encryptedKey,
             password,
             generateKey,
@@ -116,7 +139,15 @@
             rememberPass,
             useFullUrl,
             backUrl
-        } = elIdObj(document.querySelector("#form"));
+        } = elIdObj(document.body);
+        
+        function hideWarning(){
+            warningHeader.style.display = hideWarningToggle.checked ? "none" : "block";
+            localStorage.setItem("hideWarning",hideWarningToggle.checked);
+        }
+        hideWarningToggle.addEventListener("change",hideWarning);
+        hideWarningToggle.checked = localStorage.getItem("hideWarning") || false;
+        hideWarning()
         encryptedKey.value= encryptedKey.value || localStorage.getItem("encrypted_key") || "";
         password.value= password.value || localStorage.getItem("password") || "";
         backUrl.innerText = back
@@ -161,39 +192,54 @@
                         create: undefined // Don't copy the create stamp field
                     });
                     let new_hash = b64(keyp.hash);
-                    let el = newEl("<pre></pre>");
-                    el.textContent = keyp.toString();
-                    document.body.prepend(el);
-                    const formData = new FormData();
-                    fetch(vouchUrl, {
-                        body: lk_write(keyp),
-                        method: "POST"
-                    }).then(async response => {
-                        if (!response.ok) {
-                            let body = await response.text();
-                            throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
-                        }
-                        if (backUrl.innerText != "") {
-                            window.location = backUrl.textValue;
-                        }else {
-                            // In theory we could use the location from our packet - but its a TODO to specify the exact path encoding rules
-                            let loc = response.headers.get("location");
-                            if (!useFullUrl.checked){
-                                loc =  loc.split("?")[0];
-                            }
-                            window.location = loc;
-                        }
-                    }).catch(logerr);
 
-                } catch (e) {
-                    logerr(e);
-                }
+                    let html = keyp.toHTML();
+                    let formEl = document.querySelector("#form");
+                    formEl.insertAdjacentHTML("afterend",keyp.toHTML());
+                    let countdown = range.createContextualFragment(`<input type="range" min=1 max=1000 value=100>`).firstElementChild;
+                    formEl.insertAdjacentElement("afterend",countdown);
+
+                    var id = 0;
+                    id = setInterval(() => {
+                        countdown.value = Number(countdown.value) *1.01 + "";
+                        if (countdown.value == countdown.max){
+                            clearInterval(id);
+                            send();
+                    }},10);
+
+                                        
+                    async function send (){
+                        const formData = new FormData();
+                        fetch(vouchUrl, {
+                            body: lk_write(keyp),
+                            method: "POST"
+                        }).then(async response => {
+                            if (!response.ok) {
+                                let body = await response.text();
+                                throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
+                            }
+                            if (backUrl.innerText != "") {
+                                window.location = backUrl.textValue;
+                            }else {
+                                // In theory we could use the location from our packet - but its a TODO to specify the exact path encoding rules
+                                let loc = response.headers.get("location");
+                                if (!useFullUrl.checked){
+                                    loc =  loc.split("?")[0];
+                                }
+                                window.location = loc;
+                            }
+                        }).catch(logerr);
+                    }
+                        
+                    } catch (e) {
+                        logerr(e);
+                    }
                 return false;
             });
 
             for (let pkt of pkts) {
-                let el = newEl("<pre></pre>");
-                el.textContent = pkt.toString();
+                let html = pkt.toHTML();
+                let el = range.createContextualFragment(html).firstElementChild;
                 document.body.appendChild(el);
             }
         }
@@ -204,7 +250,7 @@
                 .then(load_pkts)
                 .then(display_pkts);
         }
-        run().catch((e) => console.log(e, e.toString && e.toString(), e.toJSON && e.toJSON()));
+        run().catch((e) => console.error(e, e.toString && e.toString(), e.toJSON && e.toJSON()));
 </script>
 
 </html>

@@ -1,0 +1,111 @@
+.lk-c0.lk-b64 { border-right:0.5rem solid #298235;}/*head3-bg      */
+.lk-c1.lk-b64 { border-right:0.5rem solid #b1951d;}/*head4         */
+.lk-c2.lk-b64 { border-right:0.5rem solid #82322c;}/*head4-bg      */
+.lk-c3.lk-b64 { border-right:0.5rem solid #449155;}/*highlight     */
+.lk-c4.lk-b64 { border-right:0.5rem solid #7590db;}/*highlight-dim */
+.lk-c5.lk-b64 { border-right:0.5rem solid #4f97d7;}/*keyword       */
+.lk-c6.lk-b64 { border-right:0.5rem solid #74505c;}/*lnum          */
+.lk-c7.lk-b64 { border-right:0.5rem solid #86dc2f;}/*mat           */
+.lk-c8.lk-b64 { border-right:0.5rem solid #9f8766;}/*meta          */
+.lk-c9.lk-b64 { border-right:0.5rem solid #2d9574;}/*str           */
+.lk-c10.lk-b64 { border-right:0.5rem solid #86dc2f;}/*suc           */
+.lk-c11.lk-b64 { border-right:0.5rem solid #9a9aba;}/*ttip          */
+.lk-c12.lk-b64 { border-right:0.5rem solid #5e5079;}/*ttip-sl       */
+.lk-c13.lk-b64 { border-right:0.5rem solid #3432ae;}/*ttip-bg       */
+.lk-c14.lk-b64 { border-right:0.5rem solid #ce537a;}/*type          */
+.lk-c15.lk-b64 { border-right:0.5rem solid #3b31ad;}/*var           */
+.lk-c16.lk-b64 { border-right:0.5rem solid #dc752f;}/*war           */
+.lk-c17.lk-b64 { border-right:0.5rem solid #2d9574;}/*aqua          */
+.lk-c18.lk-b64 { border-right:0.5rem solid #29f235;}/*aqua-bg       */
+.lk-c19.lk-b64 { border-right:0.5rem solid #67b11d;}/*green         */
+.lk-c20.lk-b64 { border-right:0.5rem solid #693235;}/*green-bg      */
+.lk-c21.lk-b64 { border-right:0.5rem solid #79492d;}/*green-bg-s    */
+.lk-c22.lk-b64 { border-right:0.5rem solid #28def0;}/*cyan          */
+.lk-c23.lk-b64 { border-right:0.5rem solid #f2241f;}/*red           */
+.lk-c24.lk-b64 { border-right:0.5rem solid #4c9a2c;}/*red-bg        */
+.lk-c25.lk-b64 { border-right:0.5rem solid #512e31;}/*red-bg-s      */
+.lk-c26.lk-b64 { border-right:0.5rem solid #4f97d7;}/*blue          */
+.lk-c27.lk-b64 { border-right:0.5rem solid #294299;}/*blue-bg       */
+.lk-c28.lk-b64 { border-right:0.5rem solid #2d9252;}/*blue-bg-s     */
+.lk-c29.lk-b64 { border-right:0.5rem solid #a31db1;}/*magenta       */
+.lk-c30.lk-b64 { border-right:0.5rem solid #b1951d;}/*yellow        */
+.lk-c31.lk-b64 { border-right:0.5rem solid #92329c;}/*yellow-bg     */
+.lk-c32.lk-b64 { border-right:0.5rem solid #5d4d7a; }
+
+
+.colors{
+    color:#282a36;
+    color:#44475a;  /*	Current Line Color */
+    color:#44475a;	/* 	Selection Color*/
+    color:#f8f8f2;	/* 	Foreground Color*/
+    color:#6272a4;	/* 	Comment Color*/
+    color:#8be9fd;	/* 	Cyan Color*/
+    color:#50fa7b;	/* 	Green Color*/
+    color:#ffb86c;	/* 	Orange Color*/
+    color:#ff79c6;	/* 	Pink Color*/
+    color:#bd93f9;	/* 	Purple Color*/
+    color:#ff5555;	/* 	Red Color*/
+    color:#f1fa8c;	/* 	Yellow Color*/
+}
+
+.spacemacs{
+    color: #222226;/*act1          */
+    color: #5d4d7a;/*act2*/
+    color: #b2b2b2;/*base          */
+    color: #686868;/*base-dim      */
+    color: #292b2e;/*bg1          */ 
+    color: #212026;/*bg2           */
+    color: #100a14;/*bg3           */
+    color: #0a0814;/*bg4           */
+    color: #42444a;/*bg-alt        */
+    color: #5d4d7a;/*border        */
+    color: #cbc1d5;/*cblk          */
+    color: #2f2b33;/*cblk-bg       */
+    color: #827591;/*cblk-ln       */
+    color: #373040;/*cblk-ln-bg    */
+    color: #e3dedd;/*cursor        */
+    color: #a45bad;/*const         */
+    color: #2aa1ae;/*comment       */
+    color: #2aa1ae;/*comment-light */
+    color: #292e34;/*comment-bg    */
+    color: #c56ec3;/*comp          */
+    color: #e0211d;/*err           */
+    color: #bc6ec5;/*func          */
+    color: #4f97d7;/*head1         */
+    color: #293239;/*head1-bg      */
+    color: #2d9574;/*head2         */
+    color: #293235;/*head2-bg      */
+    color: #67b11d;/*head3         */
+    color: #293235;/*head3-bg      */
+    color: #b1951d;/*head4         */
+    color: #32322c;/*head4-bg      */
+    color: #444155;/*highlight     */
+    color: #3b314d;/*highlight-dim */
+    color: #4f97d7;/*keyword       */
+    color: #44505c;/*lnum          */
+    color: #86dc2f;/*mat           */
+    color: #9f8766;/*meta          */
+    color: #2d9574;/*str           */
+    color: #86dc2f;/*suc           */
+    color: #9a9aba;/*ttip          */
+    color: #5e5079;/*ttip-sl       */
+    color: #34323e;/*ttip-bg       */
+    color: #ce537a;/*type          */
+    color: #7590db;/*var           */
+    color: #dc752f;/*war           */
+    color: #2d9574;/*aqua          */
+    color: #293235;/*aqua-bg       */
+    color: #67b11d;/*green         */
+    color: #293235;/*green-bg      */
+    color: #29422d;/*green-bg-s    */
+    color: #28def0;/*cyan          */
+    color: #f2241f;/*red           */
+    color: #3c2a2c;/*red-bg        */
+    color: #512e31;/*red-bg-s      */
+    color: #4f97d7;/*blue          */
+    color: #293239;/*blue-bg       */
+    color: #2d4252;/*blue-bg-s     */
+    color: #a31db1;/*magenta       */
+    color: #b1951d;/*yellow        */
+    color: #32322c;/*yellow-bg     */
+}

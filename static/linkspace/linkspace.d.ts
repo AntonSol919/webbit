@@ -55,6 +55,12 @@ export function lk_write(pkt: Pkt, allow_private?: boolean): Uint8Array;
 export function b64(bytes: Uint8Array, mini?: boolean): string;
 /**
 * @param {Uint8Array} bytes
+* @param {string} _ignored
+* @returns {string}
+*/
+export function lk_encode(bytes: Uint8Array, _ignored: string): string;
+/**
+* @param {Uint8Array} bytes
 * @returns {Uint8Array}
 */
 export function blake3_hash(bytes: Uint8Array): Uint8Array;
@@ -116,6 +122,10 @@ export class Link {
 */
   toString(): string;
 /**
+* @returns {string}
+*/
+  toHTML(): string;
+/**
 */
   readonly ptr: Uint8Array;
 /**
@@ -162,6 +172,11 @@ export class Pkt {
 * @returns {string}
 */
   toString(): string;
+/**
+* @param {boolean | undefined} include_lossy_escaped_data
+* @returns {string}
+*/
+  toHTML(include_lossy_escaped_data?: boolean): string;
 /**
 * @returns {Array<any> | undefined}
 */
@@ -264,6 +279,7 @@ export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly __wbg_pkt_free: (a: number) => void;
   readonly pkt_toString: (a: number, b: number) => void;
+  readonly pkt_toHTML: (a: number, b: number, c: number) => void;
   readonly pkt_obj: (a: number) => number;
   readonly pkt_pkt_type: (a: number) => number;
   readonly pkt_hash: (a: number, b: number) => void;
@@ -303,7 +319,7 @@ export interface InitOutput {
   readonly link_new: (a: number, b: number, c: number) => void;
   readonly link_toJSON: (a: number, b: number) => void;
   readonly link_toAbeJSON: (a: number, b: number) => void;
-  readonly link_toString: (a: number, b: number) => void;
+  readonly link_toHTML: (a: number, b: number) => void;
   readonly link_ptr: (a: number, b: number) => void;
   readonly link_tag: (a: number, b: number) => void;
   readonly __wbg_jserr_free: (a: number) => void;
@@ -325,8 +341,10 @@ export interface InitOutput {
   readonly lk_read: (a: number, b: number, c: number) => void;
   readonly lk_read_unchecked: (a: number, b: number, c: number) => void;
   readonly b64: (a: number, b: number, c: number, d: number) => void;
+  readonly lk_encode: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly blake3_hash: (a: number, b: number, c: number) => void;
   readonly build_info: (a: number) => void;
+  readonly link_toString: (a: number, b: number) => void;
   readonly __wbindgen_malloc: (a: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
