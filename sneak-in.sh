@@ -4,7 +4,7 @@ if ! [ -x "$(command -v lk )" ]; then
     exit 1
 fi
 
-lk data --read $1 | \
+lk datapoint --data $1 | \
     lk collect --create [epoch] webbit::/${2:-1} --ctag data | \
     lk --init save -f | \
     lk p [hash:str] | \

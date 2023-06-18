@@ -15,23 +15,27 @@
      const range = document.createRange();
 
      const out_style = `
-position: fixed;
+position:fixed;
 left:0px;
-bottom:0px;
+top:0px;
+height:0px;
 display:flex;
 flex-flow: column;
 align-items: center;
 justify-content: center;
 width:100vw;
+`
+     const form_style = `
+
 z-index: 2147483647;
 border: 1px solid #d3d3d3;
 padding: 10px;
 background-color: #2196F3;
 color: #fff;
-`
-     const form_style = `
+min-width:32vw;
+max-width:64vw;
 display:flex;
-flex-flow: row no-wrap;
+transform: translateY(50%);
 align-items: center;
 gap: 12px;
 justify-content: center;
@@ -41,8 +45,8 @@ justify-content: center;
 <div comment="this div will be automatically dropped on upload" id="webbit" style="${out_style}" contentEditable="false">
 <div style="${form_style}"> 
 
-  <label>edit:</label> <input type="checkbox" id="webbitDesignMode" />
-  <label>Destination:</label> <div contenteditable id="webbitPath"> ${window.location.pathname}</div>
+  <label>Path:</label> <div contenteditable id="webbitPath" style="max-width:50vw;overflow:scroll"> ${window.location.pathname}</div>
+  <label>Edit:</label> <input type="checkbox" id="webbitEdit" />
   <button id="webbitUpload">Upload</button>
   <a href="/about.html">About</a>
 </div>
@@ -52,21 +56,28 @@ justify-content: center;
      const fragment = range.createContextualFragment(editor).firstElementChild;
 
      const {
+         webbit,
          webbitPath,
          webbitUpload,
          webbitErrors,
-         webbitDesignMode
+         webbitEdit
      } = elIdObj(fragment);
 
-     webbitDesignMode.addEventListener("click", () => document.body.contentEditable = webbitDesignMode.checked + "");
+     webbitEdit.addEventListener("click", () => {
+         document.body.appendChild(webbit); // move to last element - helps focus & tab flow
+         document.body.contentEditable = webbitEdit.checked + "";
+         document.body.focus();
+     });
 
      function serializeDocument() {
          // The server demands files to start with:
          const HTML_PREFIX = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head>`;
+         let editable = document.body.contentEditable;
          document.body.contentEditable = "false";
          document.body.removeChild(fragment);
          let string = new XMLSerializer().serializeToString(document).replace(/&amp;/g, "&");
-         document.body.appendChild(fragment);
+         document.body.prepend(fragment);
+         document.body.contentEditable = editable;
          string = string.substring(string.indexOf("<head>") + "<head>".length);
          return HTML_PREFIX + string;
      }
@@ -94,5 +105,8 @@ justify-content: center;
      function logerr(e) {
          webbitErrors.prepend(range.createContextualFragment(`<div>${e}</div>`).firstElementChild);
      }
-     window.addEventListener("load", () => document.body.appendChild(fragment));
+     window.addEventListener("load", () => {
+         document.body.prepend(fragment);
+         webbitPath.focus();
+     });
  })();

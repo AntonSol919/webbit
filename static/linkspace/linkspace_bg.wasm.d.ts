@@ -65,6 +65,7 @@ export function lk_read(a: number, b: number, c: number): void;
 export function lk_read_unchecked(a: number, b: number, c: number): void;
 export function b64(a: number, b: number, c: number, d: number): void;
 export function blake3_hash(a: number, b: number, c: number): void;
+export function build_info(a: number): void;
 export function __wbindgen_malloc(a: number): number;
 export function __wbindgen_realloc(a: number, b: number, c: number): number;
 export function __wbindgen_add_to_stack_pointer(a: number): number;

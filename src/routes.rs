@@ -14,7 +14,7 @@ use linkspace::{
 use rocket::{
     data::Capped,
     form::Form,
-    http::{ContentType, Status},
+    http::{ContentType, Status },
     response::{
         content::{RawHtml, RawJson},
         status::{Created, NotFound, BadRequest},
@@ -29,6 +29,7 @@ use tokio::io::AsyncWriteExt;
 
 pub fn routes() -> Vec<Route> {
     rocket::routes![
+        favicon,
         view_plain,
         view_with_upload,
         view_any,
@@ -46,8 +47,12 @@ pub fn routes() -> Vec<Route> {
         get_compromised
     ]
 }
+#[get("/favicon.ico",rank=0)]
+fn favicon() -> (ContentType, &'static [u8]) {
+    (ContentType::Icon,include_bytes!("./favicon.ico"))
+}
 
-#[get("/<ipath..>?alts&<hash>",rank=1)]
+#[get("/<ipath..>?alts&<hash>",rank=2)]
 async fn alts(_w:Webbit, ipath: AnyIPath,hash: Hash) -> Result<NotFound<RawHtml<String>>>{
     let alt_list = tokio::fs::read_to_string("./alts").await?;
     let mut st = format!("<ul>");
@@ -88,26 +93,32 @@ fn tree_json(_w:Webbit, ipath: AnyIPath, lk: &State<Lk>) -> Result<RawJson<Strin
 // --- view function start at rank 100 
 
 #[get("/<ipath..>?<hash>&uploader",rank=100)]
-async fn view_with_upload(w:Webbit, ipath: HtmlIPath, hash: Option<Hash>, lk: &State<Lk>) -> Result<View> {
+async fn view_with_upload(w:Webbit, ipath: HtmlIPath, hash: Option<Hash>, req_hash:Option<ReqHeaderHash>, lk: &State<Lk>) -> Result<View> {
+    let hash = hash.or(req_hash.map(|o|Hash(o.0)));
     _view(w,ipath, hash, true, lk).await
 }
 #[get("/<ipath..>?<hash>", rank = 110)]
-async fn view_plain(w:Webbit, ipath: HtmlIPath, hash: Option<Hash>, lk: &State<Lk>) -> Result<View> {
+async fn view_plain(w:Webbit, ipath: HtmlIPath, hash: Option<Hash>, req_hash:Option<ReqHeaderHash>,lk: &State<Lk>) -> Result<View> {
+    let hash = hash.or(req_hash.map(|o|Hash(o.0)));
     _view(w,ipath, hash, false, lk).await
 }
 
 #[derive(Responder)]
 enum View {
-    LkFile((ContentType, Vec<u8>)),
-    Blob(Vec<u8>),
+    LkFile((ContentType, HeaderHash<Vec<u8>>)),
+    Blob(HeaderHash<Vec<u8>>),
     Alts(Redirect),
     RealPath(Redirect),
     Template((Status,NamedFile)),
+    #[response(status = 200)]
+    TemplateMut(RawHtml<Vec<u8>>),
     #[response(status = 417)]
     ContentError(String),
 }
+
 #[get("/<ipath..>?<hash>",rank = 199)]
-async fn view_any(_w:Webbit, ipath: AnyIPath, hash: Option<Hash>, lk: &State<Lk>) -> Result<View> {
+async fn view_any(_w:Webbit, ipath: AnyIPath, hash: Option<Hash>,req_hash:Option<ReqHeaderHash>, lk: &State<Lk>) -> Result<View> {
+    let hash = hash.or(req_hash.map(|o|Hash(o.0)));
     let pkt = {read_pkt(&ipath.0, hash, lk.tlk())?};
     let r = match pkt {
         Some(Either::Left(data)) => {
@@ -131,15 +142,16 @@ async fn view_any(_w:Webbit, ipath: AnyIPath, hash: Option<Hash>, lk: &State<Lk>
 }
 
 async fn _view(_w:Webbit, ipath: HtmlIPath, hash: Option<Hash>, uploader: bool, lk: &State<Lk>) -> Result<View> {
+    
     let pkt = {read_pkt(&ipath.0, hash, lk.tlk())? };
     let r = match pkt{
         Some(Either::Left(data)) if !uploader => View::LkFile((ContentType::HTML, data)),
-        Some(Either::Left(data)) => match std::str::from_utf8(&data) {
+        Some(Either::Left(HeaderHash(hash,data))) => match std::str::from_utf8(&data) {
             Ok(o) => match insert_html_header(
                 &o,
                 "<script id='webbitScript' src='/uploader.js'></script>",
             ) {
-                Ok(h) => View::LkFile((ContentType::HTML, h.into_bytes())),
+                Ok(h) => View::LkFile((ContentType::HTML, HeaderHash(hash,h.into_bytes()))),
                 Err(e) => View::ContentError(e.to_string()),
             },
             Err(e) => View::ContentError(e.to_string()),
@@ -153,7 +165,7 @@ async fn _view(_w:Webbit, ipath: HtmlIPath, hash: Option<Hash>, uploader: bool, 
                 let editor = insert_html_header(&editor, "<script id='webbitScript' src='/uploader.js'></script>")
                     .context("can't inject the script into html_editor")?;
 
-                View::LkFile((ContentType::HTML,editor.into_bytes()))
+                View::TemplateMut(RawHtml(editor.into_bytes()))
             }
         },
         //Some(Either::Right(_pkt)) => View::Template((Status::NotFound,NamedFile::open("./template/wrong_path.html").await?)),
@@ -173,13 +185,13 @@ async fn quarantine_blob(_q:Quarantine,hash: Hash) -> Option<File> {
 }
 
 #[get("/html?<hash>&<back>")]
-async fn quarantine(_q:Quarantine, hash: Hash,back:Option<String>) -> Option<RawHtml<File>> {
+async fn quarantine(_q:Quarantine, hash: Hash,back:Option<String>) -> Either<RawHtml<File>,&'static str>{
     let _ = back;
     let _ = hash;
-    tokio::fs::File::open(format!("./template/quarantine.html"))
-        .await
-        .ok()
-        .map(RawHtml)
+    match tokio::fs::File::open(format!("./template/quarantine.html")).await.ok(){
+        Some(v) => Either::Left(RawHtml(v)),
+        None => Either::Right("can't open"),
+    }
 }
 
 #[post("/vouch?<hash>", data = "<pkts>")]

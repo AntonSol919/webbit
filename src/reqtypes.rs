@@ -1,9 +1,9 @@
 use std::{ marker::PhantomData, sync::{ OnceLock} };
-use rocket::{http::{uri::{fmt::{FromUriParam, UriDisplay}, self, Host}, impl_from_uri_param_identity, Status }, form::{FromFormField, ValueField, DataField}, request::{FromRequest, Outcome}, outcome::IntoOutcome};
+use rocket::{http::{uri::{fmt::{FromUriParam, UriDisplay}, self, Host}, impl_from_uri_param_identity, Status, Header }, form::{FromFormField, ValueField, DataField}, request::{FromRequest, Outcome}, outcome::IntoOutcome };
 use linkspace::prelude::{* };
 
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug,Copy,Clone,PartialEq,Eq)]
 pub struct Hash(pub B64<[u8;32]>);
 #[rocket::async_trait]
 impl<'r> FromFormField<'r> for Hash {
@@ -24,6 +24,11 @@ impl<P:uri::fmt::Part> UriDisplay<P> for Hash{
     fn fmt(&self, f: &mut uri::fmt::Formatter<P>) -> std::fmt::Result {
         f.write_value(self.0.b64())
     }
+}
+
+#[derive(FromForm)]
+pub struct HashBody {
+    pub hash: Hash,
 }
 
 
@@ -68,10 +73,14 @@ impl<A> LkPath<A>{
     pub fn any(self) -> AnyIPath{LkPath(self.0,PhantomData)}
     pub fn cast<B>(self) -> LkPath<B>{ LkPath(self.0,PhantomData)}
 }
+
 impl AnyIPath { pub fn new(p:&IPath) -> AnyIPath{ LkPath(p.to_owned(),PhantomData)}}
+
 pub type HtmlIPath = LkPath<HtmlExt>;
 pub type AnyIPath = LkPath<()>;
+
 pub trait IsExt { fn is_ext(segment: &[u8]) -> bool;}
+
 pub struct HtmlExt;
 impl IsExt for HtmlExt { fn is_ext(segment:&[u8]) -> bool {segment.ends_with(b".html")}}
 impl IsExt for (){ fn is_ext(_segment:&[u8]) -> bool {true}}
@@ -79,6 +88,7 @@ impl IsExt for (){ fn is_ext(_segment:&[u8]) -> bool {true}}
 pub fn ipath_uri_display(p:&SPath) -> Option<String>{
     p.iter().map(|c|Some(format!("/{}",& std::str::from_utf8(c).ok()? as &dyn UriDisplay::<uri::fmt::Path>))).try_collect::<String>()
 }
+
 impl<EXT : IsExt> FromSegments<'_> for LkPath<EXT>{
     type Error = anyhow::Error;
 
@@ -159,5 +169,40 @@ impl<'r> FromRequest<'r> for Webbit{
         }else {
             Outcome::Forward(())
         }
+    }
+}
+
+
+
+
+use rocket::request::Request;
+use rocket::response::{self, Response, Responder};
+
+pub struct HeaderHash<R>(pub LkHash,pub R);
+impl<'r, 'o: 'r, R: Responder<'r, 'o>> Responder<'r, 'o> for HeaderHash<R> {
+    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'o> {
+        let header = Header::new("LK-Hash", self.0.to_string());
+        Response::build()
+            .merge(self.1.respond_to(req)?)
+            .header(header)
+            .ok()
+    }
+}
+
+
+pub type ReqHeaderHash = HeaderHash<()>;
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ReqHeaderHash{
+    type Error = ();
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        match req.headers().get_one("LK-Hash"){
+            Some(st) => match st.parse(){
+                Ok(o) => Outcome::Success(HeaderHash(o,())),
+                Err(_) => Outcome::Failure((Status::BadRequest,()))
+            },
+            None => Outcome::Forward(()),
+        }
+        
     }
 }

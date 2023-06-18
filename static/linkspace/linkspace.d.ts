@@ -58,6 +58,10 @@ export function b64(bytes: Uint8Array, mini?: boolean): string;
 * @returns {Uint8Array}
 */
 export function blake3_hash(bytes: Uint8Array): Uint8Array;
+/**
+* @returns {string}
+*/
+export function build_info(): string;
 
 /**
 * @param {Uint8Array} bytes
@@ -322,6 +326,7 @@ export interface InitOutput {
   readonly lk_read_unchecked: (a: number, b: number, c: number) => void;
   readonly b64: (a: number, b: number, c: number, d: number) => void;
   readonly blake3_hash: (a: number, b: number, c: number) => void;
+  readonly build_info: (a: number) => void;
   readonly __wbindgen_malloc: (a: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;

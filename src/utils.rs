@@ -13,7 +13,7 @@ use crate::reqtypes::*;
 pub fn ok<A,T,E>(ff:impl FnOnce(A) -> Result<T,E>) -> impl FnOnce(A) -> Option<T> { |v| (ff)(v).ok()}
 
 /// Some(Right(pkt)) means a packet was found under the wrong ipath. 
-pub fn read_pkt(ipath: &IPath, hash: Option<Hash>,lk:linkspace::Linkspace) -> anyhow::Result<Option<Either<Vec<u8>,NetPktBox>>>{
+pub fn read_pkt(ipath: &IPath, hash: Option<Hash>,lk:linkspace::Linkspace) -> anyhow::Result<Option<Either<HeaderHash<Vec<u8>>,NetPktBox>>>{
     use linkspace::prelude::*;
     use linkspace::runtime::*;
     let linkpkt = match hash {
@@ -42,7 +42,7 @@ pub fn read_pkt(ipath: &IPath, hash: Option<Hash>,lk:linkspace::Linkspace) -> an
         }
     };
     let data = collect(&lk,&linkpkt)?;
-    Ok(Some(Either::Left(data)))
+    Ok(Some(Either::Left(HeaderHash(linkpkt.hash(),data))))
 }
 
 pub fn collect(lk: &Linkspace, pkt:&dyn NetPkt) -> anyhow::Result<Vec<u8>>{

@@ -54,7 +54,7 @@ fn rocket() -> _ {
     std::fs::create_dir_all("./quarantine").unwrap();
     let rocket =  rocket::build()
         .manage(Lk)
-        .mount("/", FileServer::from("static/").rank(0))
+        .mount("/", FileServer::from("static/").rank(1))
         .mount("/",  routes::routes() );
     let figment = rocket.figment();
     let _ = QUARANTINE.get_or_init(|| {
