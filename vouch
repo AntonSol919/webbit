@@ -10,7 +10,7 @@ echo $PUBKEY is vouching for $QUARANTINE_FILE
 # I.e. if the `lk` (linkspace cli) is installed: 
 if [ -x "$(command -v lk )" ]; then 
     # The path we print here is the ABE encoded string, not the URI encoded one
-    lk printf "Its result will be something like [path:str]?hash=[hash:str]"
+    lk pktf "Its result will be something like [path:str]?hash=[hash:str]"
 fi
 
 # The quarantine has already been copied.

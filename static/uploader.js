@@ -62,9 +62,12 @@ justify-content: center;
          webbitErrors,
          webbitEdit
      } = elIdObj(fragment);
-
+     let initEditable = undefined;
      webbitEdit.addEventListener("click", () => {
          document.body.appendChild(webbit); // move to last element - helps focus & tab flow
+         if (initEditable == undefined) {
+             initEditable = [document.body.contentEditable];
+         }
          document.body.contentEditable = webbitEdit.checked + "";
          document.body.focus();
      });
@@ -72,18 +75,22 @@ justify-content: center;
      function serializeDocument() {
          // The server demands files to start with:
          const HTML_PREFIX = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head>`;
-         let editable = document.body.contentEditable;
-         document.body.contentEditable = "false";
+         if (initEditable != undefined) {
+             initEditable[1] = document.body.contentEditable;
+             document.body.contentEditable = initEditable[0];
+         }
          document.body.removeChild(fragment);
          let string = new XMLSerializer().serializeToString(document).replace(/&amp;/g, "&");
          document.body.prepend(fragment);
-         document.body.contentEditable = editable;
+         if (initEditable != undefined) {
+             document.body.contentEditable = initEditable[1];
+         }
          string = string.substring(string.indexOf("<head>") + "<head>".length);
          return HTML_PREFIX + string;
      }
      webbitUpload.addEventListener("click", () => {
 
-         let dest = window.location.origin + webbitPath.innerText;
+         let dest = window.location.origin + webbitPath.innerText + "?data";
          const page = serializeDocument();
          const body = new Blob([page], {
              type: "text/xml"

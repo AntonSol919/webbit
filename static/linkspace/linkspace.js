@@ -1346,12 +1346,12 @@ function __wbg_get_imports() {
         const ret = !getObject(arg0);
         return ret;
     };
-    imports.wbg.__wbg_jserr_new = function(arg0) {
-        const ret = JsErr.__wrap(arg0);
-        return addHeapObject(ret);
-    };
     imports.wbg.__wbg_new_09938a7d020f049b = function(arg0) {
         const ret = new Uint8Array(getObject(arg0));
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_jserr_new = function(arg0) {
+        const ret = JsErr.__wrap(arg0);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_string_get = function(arg0, arg1) {

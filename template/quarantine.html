@@ -88,11 +88,11 @@
         return range.createContextualFragment(el).firstElementChild;
     }
     const loc = window.location;
+    const linkp_hash = loc.pathname.substring(1);
     const params = new URLSearchParams(loc.search);
-    const linkp_hash = params.get('hash');
     const back = params.get('back');
-    const quarantinePktsUrl = `${loc.origin}/blob?hash=${linkp_hash}`;
-    const vouchUrl = `${loc.origin}/vouch?hash=${linkp_hash}`;
+    const quarantinePktsUrl = loc + "?pkts";
+    const vouchUrl = `${loc.origin}/vouch/${linkp_hash}`;
 
     async function load_pkts(response) {
         if (!response.ok) {

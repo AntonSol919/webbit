@@ -8,7 +8,7 @@ watch: linkspace-js
 	watchexec -o restart -w ./src/ -- make run 
 
 run: linkspace-js
-	cargo run
+	RUST_LOG=trace cargo run
 
 
 linkspace-js:

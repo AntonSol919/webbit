@@ -1,4 +1,5 @@
 #!/bin/bash
+# insert an unsigned page into webbit.
 if ! [ -x "$(command -v lk )" ]; then 
     echo `lk` is missing - https://github.com/AntonSol919/linkspace
     exit 1

@@ -1,4 +1,4 @@
-#![feature(try_blocks,lazy_cell,thread_local,write_all_vectored,array_windows,iterator_try_collect,str_split_whitespace_remainder)]
+#![feature(try_blocks,lazy_cell,thread_local,write_all_vectored,array_windows,iterator_try_collect,str_split_whitespace_remainder,io_slice_advance)]
 
 use std::{sync::LazyLock };
 
@@ -38,8 +38,6 @@ pub static Q : std::sync::LazyLock<Query> = std::sync::LazyLock::new(||{
 
 #[launch]
 fn rocket() -> _ {
-    
-
     println!("Init");
     let env_filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::WARN.into())

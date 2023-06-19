@@ -1,41 +1,39 @@
 
 
 use anyhow::Context;
-use linkspace::consts::PUBLIC_GROUP_PKT;
-use linkspace::point::lk_read;
 use linkspace::prelude::*;
 use linkspace::runtime::{lk_get_hash,lk_get_all};
 use rocket::Either;
 use rocket::response::content::{RawHtml, RawJson};
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 use crate::reqtypes::*;
 
 
 pub fn ok<A,T,E>(ff:impl FnOnce(A) -> Result<T,E>) -> impl FnOnce(A) -> Option<T> { |v| (ff)(v).ok()}
 
 /// Some(Right(pkt)) means a packet was found under the wrong ipath. 
-pub fn read_pkt(ipath: &IPath, hash: Option<Hash>,lk:linkspace::Linkspace) -> anyhow::Result<Option<Either<HeaderHash<Vec<u8>>,NetPktBox>>>{
+pub fn read_pkt(q:&ReqQuery,lk:linkspace::Linkspace) -> anyhow::Result<Option<Either<HeaderHash<Vec<u8>>,NetPktBox>>>{
     use linkspace::prelude::*;
     use linkspace::runtime::*;
-    let linkpkt = match hash {
+    let linkpkt = match q.hash {
         None => {
-            let query = lk_query_push(lk_query(&crate::Q), "path", "=", ipath.spath_bytes())?;
-            let query = lk_query_push(query, "i_branch", "=", &[0,0,0,0])?;
-            let mut r = PUBLIC_GROUP_PKT.as_netbox();
+            let query = lk_query_push(lk_query(&q.query), "i_branch", "=", &[0,0,0,0])?;
+            let mut r = None;
             lk_get_all(&lk, &query, &mut |pkt| {
-                if pkt.get_create_stamp() > r.get_create_stamp() {
-                    r = pkt.as_netbox()
-                }
+                r = Some(pkt.as_netbox());
                 return false
             })?;
-            if r.hash() == PUBLIC { return Ok(None)}
-            r
+            match r {
+                None => return Ok(None),
+                Some(p) => p
+            }
         },
         Some(hash) => {
-            let pkt = match lk_get_hash(&lk,hash.0, &mut |p| p.as_netbox())?{
+            let pkt = match lk_get_hash(&lk,hash, &mut |p| p.as_netbox())?{
                 Some(p) => p,
                 None => return Ok(None),
             };
-            if pkt.get_ipath() != ipath{
+            if pkt.get_ipath() != &*q.path.0{
                 return Ok(Some(Either::Right(pkt)))
             }
             pkt
@@ -68,7 +66,7 @@ pub fn iter_pkts_unchecked(mut ptr:&[u8]) -> impl Iterator<Item= NetPktBox> + '_
 pub fn try_iter_pkts(mut ptr:&[u8]) -> impl Iterator<Item=Result<NetPktBox,linkspace::prelude::PktError>> + '_{
     std::iter::from_fn(move ||{
         if ptr.is_empty() { return None};
-        match lk_read(&ptr, false){
+        match linkspace::point::lk_read(&ptr, false){
             Ok((pkt,rest)) => {
                 ptr =rest;
                 Some(Ok(pkt))
@@ -81,10 +79,10 @@ pub fn try_iter_pkts(mut ptr:&[u8]) -> impl Iterator<Item=Result<NetPktBox,links
     })
 }
 
-pub fn query2html(query: Query, lk: &Linkspace) -> Result<RawHtml<String>> {
+pub fn query2html(query: &Query, lk: &Linkspace) -> Result<RawHtml<String>> {
     let mut string = format!("<ol>");
     use std::fmt::Write;
-    lk_get_all(&lk, &query, &mut |pkt: &dyn NetPkt| {
+    lk_get_all(&lk, query, &mut |pkt: &dyn NetPkt| {
         let delta = lk_eval("[create/s:delta]", pkt)
             .ok()
             .and_then(ok(String::from_utf8))
@@ -111,7 +109,7 @@ pub fn query2html(query: Query, lk: &Linkspace) -> Result<RawHtml<String>> {
     Ok(RawHtml(string))
 }
 
-pub fn query2json(query: Query, lk: &Linkspace) -> Result<RawJson<String>> {
+pub fn query2json(query: &Query, lk: &Linkspace) -> Result<RawJson<String>> {
     let mut string = "[ ".to_string();
     use std::fmt::Write;
     lk_get_all(&lk, &query, &mut |pkt: &dyn NetPkt| {
@@ -149,4 +147,46 @@ pub fn insert_html_header(mut data: &str, head: &str) -> anyhow::Result<String> 
             .with_context(|| anyhow::anyhow!("Missing {el} - got {}", data))?;
     }
     Ok(HTML_PREFIX.into_iter().chain([head, data]).collect())
+}
+
+pub async fn write_quarantine(pkts:&[impl NetPkt]) -> anyhow::Result<()>{
+    let path = format!("./quarantine/{}", pkts[0].hash());
+    let mut file = tokio::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .await
+        .with_context(|| anyhow::anyhow!("opening {path}"))?;
+    if file.is_write_vectored(){
+        tracing::debug!("using write_vectored");
+        let mut slices = pkts.iter().flat_map(|p| p.byte_segments().io_slices().into_iter().filter(|v| !v.is_empty()))
+            .collect::<Vec<_>>();
+        // manual write_all_vectored - this dance is prob not worth it atm.
+        let mut slices :&mut [std::io::IoSlice] = slices.as_mut();
+        while !slices.is_empty(){
+            let mut bytes = file.write_vectored(&slices).await?;   
+            while bytes != 0 {
+                if bytes >= slices[0].len(){
+                    bytes -= slices[0].len();
+                    slices = &mut slices[1..];
+                } else {
+                    slices[0].advance(bytes);
+                    bytes = 0;
+                }
+            }
+        }
+    }else {
+        let bytes = {
+            let size = pkts.iter().map(|v|v.size() as usize).sum();
+            let mut bytes = vec![0;size];
+            let mut dest = bytes.as_mut_ptr();
+            for p in pkts {
+                dest = unsafe { p.byte_segments().write_segments_unchecked(dest)};
+            }
+            bytes
+        };
+        file.write_all(&bytes).await?;
+    }
+    file.flush().await?;
+    Ok(())
 }
