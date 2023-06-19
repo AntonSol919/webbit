@@ -2,17 +2,30 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta charset="utf-8">
+            </head>
+    <body>
+        <p>
+            Any url ending with '/' is results in the this index page.
+            This index page fetches the 100 latest events received by this server.
+        </p>
         <script>
+
+         async function load(){
+             let loc= window.location;
+             let url = ""+loc;
+             url += loc.search == "" ? "?" : "&";
+             url += "tree&mode=log-desc";
+             console.log(url);
+             fetch(url)
+                 .then(async (r) => {
+                     let t = await r.text();
+                     document.body.innerHTML += t;
+                 });
+         }
+         load()
 
 
         </script>
-    </head>
-    <body>
-        <p>
-            
-        </p>
-        <p>
-            Alternativly, find a page you like and add 'uploader' to the query string to <s>steal</s> copy its design.
-        </p>
+
     </body>
 </html>

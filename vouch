@@ -15,7 +15,7 @@ fi
 
 # The quarantine has already been copied.
 # You can delete or move it.
-rm "$2" || true
+false || rm "$2" || true
 
 # any non zero return value will deny the packet
 exit 0

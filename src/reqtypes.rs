@@ -1,5 +1,5 @@
 use anyhow::{bail, Context};
-use linkspace::{misc::FieldEnum, prelude::*};
+use linkspace::{ prelude::*, query::PredicateType};
 use rocket::{
     form::{DataField, FromFormField, ValueField},
     http::{
@@ -284,6 +284,12 @@ impl ReqQuery {
         match key {
             // whitelist query keys
             "alts" | "uploader" | "pkts" => {}
+            "mode" => {
+                query = lk_query_push(query, "","mode", val.as_bytes())?;
+            },
+            "follow" => {
+                query = lk_query_push(query, "","follow", val.as_bytes())?;
+            }
             "list" => {
                 info = true;
                 let depth = path.0.len() + if val.is_empty() { 0 } else { val.parse()? };
@@ -293,23 +299,26 @@ impl ReqQuery {
             "tree" => {
                 info = true;
                 eprintln!("val = {val} {}",val.is_empty());
-                let depth = path.0.len() + if val.is_empty() { 0 } else { val.parse()? };
-                let depth: u8 = depth.try_into()?;
+                let depth = path.0.len() + if val.is_empty() { 255 } else { val.parse()? };
+                let depth: u8 = depth.min(200).try_into()?;
                 query = lk_query_push(query, "path_len", "<=", &[depth])?;
             }
             // TODO add :<: syntax
-            e => match FieldEnum::try_from_name(key) {
-                None => bail!("unknown query key {e}"),
-                Some(field) => {
-                    if val.is_empty() {
-                        query = lk_query_push(query, "type", "1", &[field.info().pkts.bits()])?;
-                    } else {
-                        if field == FieldEnum::PktHashF {
-                            hash = Some(val.parse()?)
-                        }
-                        let e = format!("{key}:=:{val}");
-                        query = lk_query_parse(query, &[&e], ())?
+            e => {
+                let predicate : PredicateType = e.parse().with_context(||e.to_string())?;
+
+                if val.is_empty() {
+                    if predicate == PredicateType::Pubkey{
+                        query = lk_query_push(query, "type", "1",&[ PointTypeFlags::SIGNATURE.bits()])?;
+                    }else {
+                        bail!("missing value")
                     }
+                } else {
+                    if predicate == PredicateType::Hash{
+                        hash = Some(val.parse()?)
+                    }
+                    let e = format!("{predicate}:=:{val}");
+                    query = lk_query_parse(query, &[&e], ())?
                 }
             },
         }
@@ -360,6 +369,22 @@ impl<'r> FromRequest<'r> for InfoQuery<'r> {
         let q = try_outcome!(request.guard::<LkQuery>().await);
         if q.0.info{
             Outcome::Success(InfoQuery(q.0))
+        } else {
+            Outcome::Forward(())
+        }
+    }
+}
+
+pub struct TailSlash;
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for TailSlash {
+    type Error = String;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, String> {
+        let st = request.uri().path().as_str();
+        tracing::info!(st,"request path str");
+        if st.ends_with("/"){
+            Outcome::Success(TailSlash)
         } else {
             Outcome::Forward(())
         }

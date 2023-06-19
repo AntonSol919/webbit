@@ -103,18 +103,18 @@ fn get_all(_w:Webbit, query: LkQuery<'_>, lk: &State<Lk>) -> Result<Vec<u8>>{
 }
 
 
-#[get("/<_ipath..>", format = "text/html",rank=11)]
+#[get("/<_ipath..>", format = "text/html",rank=10)]
 fn query_html(_w:Webbit, _ipath: AnyIPath,query:InfoQuery<'_>, lk: &State<Lk>) -> Result<RawHtml<String>> {
     query2html(&query.0.query, &lk.tlk())
 }
 
-#[get("/<_ipath..>", format = "application/json",rank=12)]
+#[get("/<_ipath..>", format = "application/json",rank=11)]
 fn query_json(_w:Webbit, _ipath: AnyIPath,query: InfoQuery<'_>, lk: &State<Lk>) -> Result<RawJson<String>> {
     query2json(&query.0.query, &lk.tlk())
 }
 
-#[get("/<_ipath..>", format = "text/html",rank=10)]
-async fn index(_w:Webbit, _ipath: AnyIPath) -> Result<RawHtml<File>,std::io::Error> {
+#[get("/<_ipath..>", format = "text/html",rank=12)]
+async fn index(_w:Webbit, _ipath: AnyIPath,_tail:TailSlash) -> Result<RawHtml<File>,std::io::Error> {
     tokio::fs::File::open("./template/index.html").await.map(RawHtml)
 }
 
@@ -354,8 +354,11 @@ async fn vouch(
     {
         return Ok(Upload::BadReq("your packet does not match the original"));
     }
-
-    vouch_cmd(pkts, hash.0).await
+    // This is dumb
+    let mut pkts = vec![pkts[0].clone()];
+    pkts.extend(it);
+    let arc = Arc::from(pkts);
+    vouch_cmd(&arc, hash.0).await
 }
 
 async fn vouch_cmd(pkts: &Arc<[NetPktBox]>, quarantine: LkHash) -> Result<Upload> {
@@ -384,8 +387,9 @@ async fn vouch_cmd(pkts: &Arc<[NetPktBox]>, quarantine: LkHash) -> Result<Upload
             .map(|p| &*p as &dyn NetPkt)
             .collect::<Vec<_>>();
         let local_lk = Lk.tlk();
-        lk_save_all(&local_lk, &refs)?;
-        lk_process(&local_lk);
+        let new_pkts = lk_save_all(&local_lk, &refs)?;
+        let txn_head = lk_process(&local_lk).get();
+        tracing::info!(new_pkts,txn_head, "save ok");
         Ok(())
     }).await??;
     
