@@ -1,0 +1,4 @@
+#!/bin/bash
+export LK_PASS=$(lk key --no-pubkey --no-enckey --display-pass)
+
+cat $1 | lk data | lk collect "webbit::/${2:-$1}" --sign --ctag data --forward buffer | curl -v -X POST webbit.alinkspace.org/${2:-$1}?pkts -H "Content-Type: application/octet-stream" --data-binary @-
