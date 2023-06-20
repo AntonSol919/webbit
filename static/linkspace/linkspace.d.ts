@@ -252,6 +252,7 @@ export class Pkt {
 */
   readonly pkt_type: number;
 /**
+* unpadded point size
 */
   readonly point_size: number;
 /**

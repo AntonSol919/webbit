@@ -1202,6 +1202,7 @@ export class Pkt {
         }
     }
     /**
+    * unpadded point size
     * @returns {number}
     */
     get point_size() {
