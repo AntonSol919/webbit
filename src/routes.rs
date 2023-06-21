@@ -172,8 +172,15 @@ async fn view_any(_w:Webbit,ipath:AnyIPath,hash:Option<Hash>,q : LkQuery<'_>, lk
 async fn _view(_w:Webbit, q: &ReqQuery, uploader: bool, lk: &State<Lk>) -> Result<View> {
     let pkt = {read_pkt(q, lk.tlk())? };
     let r = match pkt{
-        Some(Either::Left(data)) if !uploader => View::LkFile((ContentType::HTML, data)),
+        Some(Either::Left(data)) if !uploader => {
+            let ext = q.path.0.last().rsplit(|i| *i ==b'.').next();
+            let ext = ext.and_then(|o|std::str::from_utf8(o).ok())
+                .and_then(|st|ContentType::from_extension(st) )
+                .unwrap_or(ContentType::Bytes);
+            View::LkFile((ext, data))
+        },
         Some(Either::Left(HeaderHash(hash,data))) => match std::str::from_utf8(&data) {
+            //TODO this should use the correct template for this extention
             Ok(o) => match insert_html_header(
                 &o,
                 "<script id='webbitScript' src='/uploader.js'></script>",
