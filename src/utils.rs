@@ -101,7 +101,7 @@ pub fn query2html(query: &Query, lk: &Linkspace) -> Result<RawHtml<String>> {
         let hash = pkt.hash_ref();
         let hash_mini = hash.b64_mini();
         let pathname = pkt.path().and_then(ipath_uri_display).unwrap_or(String::new());
-        let href = format!("href=\"/{pathname}?hash={hash}\"");
+        let href = format!("href=\"{pathname}?hash={hash}\"");
 
         let (pubkey_attr,pubkey_str)= match pkt.pubkey() {
             Some(k) => (format!("pubkey=\"{k}\""),format!(" -- &( {} )",k.b64_mini())),
@@ -109,7 +109,7 @@ pub fn query2html(query: &Query, lk: &Linkspace) -> Result<RawHtml<String>> {
         };
         let _ = write!(
             &mut string,
-            "<li><a {href} {pubkey_attr} create=\"{create}\">/{pathname} {hash_mini} {delta} {pubkey_str} </a></li>",
+            "<li><a {href} {pubkey_attr} create=\"{create}\">{pathname} {hash_mini} {delta} {pubkey_str} </a></li>",
         );
 
         false

@@ -208,16 +208,16 @@
     password.value = password.value || localStorage.getItem("password") || "";
     backUrl.value= back
 
-
+ let blob,buf,bytes;
 
     async function load_pkts(response) {
         if (!response.ok) {
             let body = await response.text();
             return alert(`Error - ${response.status} - ${response.statusText} - ${body}`);
         }
-        let blob = await response.blob();
-        let buf = await blob.arrayBuffer();
-        let bytes = new Uint8Array(buf);
+        blob = await response.blob();
+        buf = await blob.arrayBuffer();
+        bytes = new Uint8Array(buf);
         window.linkspace = await init();
         console.log(build_info());
         const {
@@ -241,6 +241,7 @@
 
     function logerr(e) {
         console.error(e);
+        console.info(blob,buf,bytes);// avoid dealloc
         errors.prepend(range.createContextualFragment(`<div>${e}</div>`).firstElementChild);
     }
 

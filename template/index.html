@@ -5,12 +5,13 @@
             </head>
     <body>
         <p>
-            Any url ending with '/' is results in the this index page.
-            This index page fetches the 100 latest events received by this server.
+            URL's ending with '/' will return this index page.
+            It will fetch a list of packets posted recently
         </p>
         <script>
 
          async function load(){
+             // a lot of potential improvements here. Use a json request - add an option to filter/select by publickey 
              let loc= window.location;
              let url = ""+loc;
              url += loc.search == "" ? "?" : "&";
