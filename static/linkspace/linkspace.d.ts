@@ -24,6 +24,11 @@ export function lk_keygen(): SigningKey;
 export function lk_key_encrypt(key: SigningKey, password: Uint8Array): string;
 /**
 * @param {string} id
+* @returns {Uint8Array}
+*/
+export function lk_key_pubkey(id: string): Uint8Array;
+/**
+* @param {string} id
 * @param {Uint8Array} password
 * @returns {SigningKey}
 */
@@ -182,10 +187,6 @@ export class Pkt {
 */
   path_list(): Array<any> | undefined;
 /**
-* @returns {number}
-*/
-  size(): number;
-/**
 * @returns {Array<any>}
 */
   links_array(): Array<any>;
@@ -252,10 +253,6 @@ export class Pkt {
 */
   readonly pkt_type: number;
 /**
-* unpadded point size
-*/
-  readonly point_size: number;
-/**
 */
   readonly pubkey: Uint8Array | undefined;
 /**
@@ -264,6 +261,9 @@ export class Pkt {
 /**
 */
   readonly signature: Uint8Array | undefined;
+/**
+*/
+  readonly size: number;
 }
 /**
 */
@@ -302,7 +302,6 @@ export interface InitOutput {
   readonly pkt_path_list: (a: number) => number;
   readonly pkt_pubkey: (a: number, b: number) => void;
   readonly pkt_signature: (a: number, b: number) => void;
-  readonly pkt_point_size: (a: number) => number;
   readonly pkt_path_len: (a: number) => number;
   readonly pkt_size: (a: number) => number;
   readonly pkt_links: (a: number) => number;
@@ -335,6 +334,7 @@ export interface InitOutput {
   readonly signingkey_pubkey: (a: number, b: number) => void;
   readonly lk_keygen: () => number;
   readonly lk_key_encrypt: (a: number, b: number, c: number, d: number) => void;
+  readonly lk_key_pubkey: (a: number, b: number, c: number) => void;
   readonly lk_key_decrypt: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly lk_linkpoint: (a: number, b: number, c: number) => void;
   readonly lk_keypoint: (a: number, b: number, c: number, d: number) => void;
@@ -346,10 +346,10 @@ export interface InitOutput {
   readonly blake3_hash: (a: number, b: number, c: number) => void;
   readonly build_info: (a: number) => void;
   readonly link_toString: (a: number, b: number) => void;
-  readonly __wbindgen_malloc: (a: number) => number;
-  readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
+  readonly __wbindgen_malloc: (a: number, b: number) => number;
+  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
-  readonly __wbindgen_free: (a: number, b: number) => void;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }

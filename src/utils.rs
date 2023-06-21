@@ -1,5 +1,8 @@
 
 
+use std::borrow::Cow;
+use std::path::PathBuf;
+
 use anyhow::Context;
 use linkspace::prelude::*;
 use linkspace::runtime::{lk_get_hash,lk_get_all};
@@ -54,7 +57,14 @@ pub fn collect(lk: &Linkspace, pkt:&dyn NetPkt) -> anyhow::Result<Vec<u8>>{
 
 
 
-pub fn iter_pkts_unchecked(mut ptr:&[u8]) -> impl Iterator<Item= NetPktBox> + '_{
+pub fn iter_pkts_unchecked_alligned<'o>(ptr:&'o [u8]) -> impl Iterator<Item= &'o NetPktPtr> + '_{
+    assert!(ptr.as_ptr().align_offset(8) == 0 );
+    iter_pkts_unchecked(ptr).map(|o| match o {
+        Cow::Borrowed(o) => o,
+        Cow::Owned(_) => unreachable!(),
+    })
+}
+pub fn iter_pkts_unchecked(mut ptr:&[u8]) -> impl Iterator<Item= Cow<NetPktPtr>> + '_{
     std::iter::from_fn(move ||{
         if ptr.is_empty() { return None};
         let (pkt,rest) = linkspace::point::lk_read_unchecked(&ptr, false).expect("a private packet got in?");
@@ -63,7 +73,7 @@ pub fn iter_pkts_unchecked(mut ptr:&[u8]) -> impl Iterator<Item= NetPktBox> + '_
     })
 }
 
-pub fn try_iter_pkts(mut ptr:&[u8]) -> impl Iterator<Item=Result<NetPktBox,linkspace::prelude::PktError>> + '_{
+pub fn try_iter_pkts(mut ptr:&[u8]) -> impl Iterator<Item=Result<Cow<NetPktPtr>,linkspace::prelude::PktError>> + '_{
     std::iter::from_fn(move ||{
         if ptr.is_empty() { return None};
         match linkspace::point::lk_read(&ptr, false){
@@ -148,7 +158,7 @@ pub fn insert_html_header(mut data: &str, head: &str) -> anyhow::Result<String> 
     Ok(HTML_PREFIX.into_iter().chain([head, data]).collect())
 }
 
-pub async fn write_quarantine(pkts:&[impl NetPkt]) -> anyhow::Result<()>{
+pub async fn write_quarantine(pkts:&[impl NetPkt]) -> anyhow::Result<PathBuf>{
     let path = format!("./quarantine/{}", pkts[0].hash());
     let mut file = tokio::fs::OpenOptions::new()
         .write(true)
@@ -187,5 +197,5 @@ pub async fn write_quarantine(pkts:&[impl NetPkt]) -> anyhow::Result<()>{
         file.write_all(&bytes).await?;
     }
     file.flush().await?;
-    Ok(())
+    Ok(path.into())
 }

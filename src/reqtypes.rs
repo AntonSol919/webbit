@@ -62,14 +62,28 @@ pub struct HashBody {
 }
 
 pub mod pkts_data {
-    use std::sync::Arc;
+    use std::path::PathBuf;
 
-    use linkspace::prelude::{ NetPktBox };
+    use linkspace::prelude::{  NetPktPtr };
 
-    pub struct Pkts<'o>(pub &'o Arc<[NetPktBox]>);
+    pub struct Pkts<'o>{
+        bytes: &'o [u8],
+        pub len: usize
+    }
+    impl<'o> Pkts<'o> {
+        pub fn into_iter(&self) -> impl Iterator<Item=&'o NetPktPtr> + '_{
+            iter_pkts_unchecked_alligned(self.bytes)
+        }
+        pub async fn quarantine(&self) -> std::io::Result<PathBuf>{
+            todo!()
+        }
+    }
+
     use rocket::data::{self, Data, FromData, ToByteUnit};
     use rocket::http::Status;
     use rocket::request::Request;
+
+    use crate::utils::{ iter_pkts_unchecked_alligned};
 
     #[rocket::async_trait]
     impl<'r> FromData<'r> for Pkts<'r> {
@@ -87,15 +101,20 @@ pub mod pkts_data {
                     }
                     Err(e) => return Err((Status::InternalServerError, e.into())),
                 };
-                let mut it = crate::utils::try_iter_pkts(bytes.as_slice());
-                match it.try_collect::<Vec<_>>() {
+
+                let pkts = crate::utils::try_iter_pkts(bytes.as_slice()).map(|o|o.map(|_|())).try_collect::<Vec<()>>();
+                match bytes.as_slice().as_ptr().align_offset(8){
+                    0 => {},
+                    _ => panic!("the bytes were read into an unaligned vec")
+                }
+                match pkts{
                     Err(e) => return Err((Status::PreconditionFailed, e.into())),
-                    Ok(e) => Ok(Arc::from(e)),
+                    Ok(pkts) => Ok((bytes,pkts.len())),
                 }
             }).await;
             match pkts {
                 Err((s,r)) => Failure((*s,r)),
-                Ok(s) => Success(Pkts(s)),
+                Ok((bytes,len)) => Success(Pkts{bytes:&*bytes,len:*len}),
             }
         }
     }

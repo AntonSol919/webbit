@@ -7,26 +7,70 @@
     <link rel="stylesheet" href="./linkspace-black-colorcodes.css">
     <link rel="stylesheet" href="./linkspace-basic-black.css">
     <style>
+        html {
+            color: #f8f8f2;
+            box-sizing: border-box;
+            font-size: calc(15px + 0.390625vw);
+            background: #282a36;
+        }
 
-     html {
-         color: 	#f8f8f2;
-         box-sizing: border-box;
-         font-size: calc(15px + 0.390625vw);
-         background:#282a36;
+     #errors{
+         position:absolute
      }
 
-
-     body{
-         display:flex;
-         flex-flow:column;
-         align-items: flex-start;
+     .pkt-list-view{
+         display: flex;
+         flex-flow: column;
+         width:min-content;
+         overflow-y:scroll;
      }
+        body {
+            display: flex;
+            flex-flow: wrap;
+            justify-content:space-around;
+            justify-content: center;
+            align-items: center;
+            gap:2em;
+        }
 
-     #form > div > label {
-         display:inline-block;
-         width: 14em;
-     }
+        #form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            grid-column-gap: 5px;
+            grid-row-gap: 5px; 
+        }
 
+        #form>label {
+            display: inline-block;
+            width: 14em;
+        }
+
+     /* Tooltip container */
+        #form>label {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Tooltip text */
+        #form>label span {
+            visibility: hidden;
+            width: 20vw;
+            background-color: white;
+            color: black;
+            text-align: center;
+            padding: 5px 0;
+            border-radius: 6px;
+
+            /* Position the tooltip text - see examples below! */
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* Show the tooltip text when you mouse over the tooltip container */
+        #form>label:hover span {
+            visibility: visible;
+        }
     </style>
 </head>
 
@@ -36,15 +80,57 @@
         <input id="hideWarningToggle" type="checkbox" /></div>
     </h3>
     <div id="form">
-        <div>
-            <label>Lk ID</label> <input type="button" id="generateKey" value="new"/><input id="encryptedKey" name="username" type="text">
+            <label >Identity
+                <span>
+                    An encrypted public,private key pair.
+                    If you're using a long password you can safely share this to easly access your account elsewhere.
+                </span>
+            </label>
+            <div>
+                <input id="encryptedKey" name="username" type="text">
+                <input type="button" id="generateKey" value="new" />
+            </div>
+            <label >Public Key
+                <span>
+                    Your public key - you can identify yourself and others with this.<br>
+                    You can name them with <a href="https://www.linkspace.dev/lns.html">LNS</a>.
+                </span>
+            </label>
+            <input id="pubkeyEl" type="text" disabled/>
+            <label>
+                Password
+                <span>
+                    The password never leaves your computer - the identity is decrypted by you.
+                    If you need to enter your password - check that you trust the server and its url starts with quarantine.
+                </span>
+            </label>
+            <input id="password" name="password" type="password" />
+        <label>Remember Password
+                <span>
+                    If checked the password is saved in your localStorage, else it is removed after you leave this page.
+                </span>
+
+            </label> <input id="rememberPass" type="checkbox" checked />
+        <label>
+            Back
+                <span>
+                    After you vouch for the point you will be redirected here.
+                </span>
+        </label>
+        <input id="backUrl" type="text"/>
+        <label>Open full URL
+                <span>
+                    Open the url with ?hash=... or not.
+                    Without it someone else saving at the <b>exact</b> same time might redirect you to their page.
+                </span>
+            </label> <input id="useFullUrl" type="checkbox" />
+        <input id="submitEl" type="submit" value="Vouch" style="grid-column: 1 / 3;" disabled />
+    </div>
+    <div class="pkt-list-view">
+        <div id="packetsEl" >
+            
         </div>
-        <div> <label>Password</label> <input id="password" name="password" type="password"/></div>
-        <div> <label> On Save </label></div>
-        <div> <label> Store Password </label> <input id="rememberPass" type="checkbox" checked/></div>
-        <div> <label> Back </label> <label id="backUrl" contentEditable="true"></label></div>
-        <div> <label> Open full URL </label> <input id="useFullUrl" type="checkbox"/></div>
-        <input id="submitEl" type="submit" value="Vouch" />
+        <input type="checkbox" />
     </div>
 
 </body>
@@ -53,6 +139,7 @@
         lk_keygen,
         lk_key_encrypt,
         lk_key_decrypt,
+        lk_key_pubkey,
 
         lk_datapoint,
         lk_linkpoint,
@@ -67,8 +154,8 @@
         Link,
         get_consts,
         build_info
-    } from './linkspace-dev/linkspace.js'; 
- // } from 'https://antonsol919.github.io/webbit/linkspace/linkspace.js';
+    } from './linkspace/linkspace.js';
+    // } from 'https://antonsol919.github.io/webbit/linkspace/linkspace.js';
 
     function stripSuffix(st, suffix) {
         if (!st.endsWith(suffix)) throw `${st} does not end with ${suffix}`;
@@ -93,6 +180,35 @@
     const back = params.get('back');
     const quarantinePktsUrl = loc + "?pkts";
     const vouchUrl = `${loc.origin}/vouch/${linkp_hash}`;
+
+    let {
+        warningHeader,
+        hideWarningToggle,
+        pubkeyEl,
+        encryptedKey,
+        password,
+        generateKey,
+        submitEl,
+        rememberPass,
+        useFullUrl,
+        backUrl,
+        packetsEl
+    } = elIdObj(document.body);
+
+
+
+    function hideWarning() {
+        warningHeader.style.display = hideWarningToggle.checked ? "none" : "block";
+        localStorage.setItem("hideWarning", hideWarningToggle.checked);
+    }
+    hideWarningToggle.addEventListener("change", hideWarning);
+    hideWarningToggle.checked = localStorage.getItem("hideWarning") || false;
+    hideWarning()
+    encryptedKey.value = encryptedKey.value || localStorage.getItem("encrypted_key") || "";
+    password.value = password.value || localStorage.getItem("password") || "";
+    backUrl.value= back
+
+
 
     async function load_pkts(response) {
         if (!response.ok) {
@@ -124,133 +240,124 @@
     document.body.prepend(errors);
 
     function logerr(e) {
+        console.error(e);
         errors.prepend(range.createContextualFragment(`<div>${e}</div>`).firstElementChild);
     }
 
+ // stuff we need the linkspace wasm for
+ async function wasmElements(){
+     await init();
+     function set_pubkey(){
+         try{
+             pubkeyEl.value= b64(lk_key_pubkey(encryptedKey.value));
+             submitEl.disabled = false;
+             generateKey.style = "display:none";
+         } catch(e) {
+             submitEl.disabled = true;
+             generateKey.style = "display:inline-block";
+             pubkeyEl.value = "<Input or generate a valid key>"
+             console.warn(e)
+         }
+     }
+     encryptedKey.addEventListener("input", set_pubkey);
+     set_pubkey();
+     
+     generateKey.addEventListener("click", async () => {
+         if (encryptedKey.value != "" && !confirm("destroy key?")) {
+             return false;
+         }
+         if (password.value == "") {
+             password.value = prompt("password");
+         }
+         let bytes = new TextEncoder().encode(password.value);
+         let tmp = generateKey.value;
+         generateKey.value = "⏳";
+         await new Promise(resolve => setTimeout(resolve, 100));
+         encryptedKey.value = lk_key_encrypt(lk_keygen(), bytes);
+         generateKey.value = tmp;
+         set_pubkey()
+         return false;
+     });
+ }
+ wasmElements().catch((e) => console.error(e, e.toString && e.toString(), e.toJSON && e.toJSON()));
     function display_pkts(pkts) {
         let linkpkt = pkts[0];
-        let {
-            warningHeader,
-            hideWarningToggle,
-            encryptedKey,
-            password,
-            generateKey,
-            submitEl,
-            rememberPass,
-            useFullUrl,
-            backUrl
-        } = elIdObj(document.body);
-        
-        function hideWarning(){
-            warningHeader.style.display = hideWarningToggle.checked ? "none" : "block";
-            localStorage.setItem("hideWarning",hideWarningToggle.checked);
-        }
-        hideWarningToggle.addEventListener("change",hideWarning);
-        hideWarningToggle.checked = localStorage.getItem("hideWarning") || false;
-        hideWarning()
-        encryptedKey.value= encryptedKey.value || localStorage.getItem("encrypted_key") || "";
-        password.value= password.value || localStorage.getItem("password") || "";
-        backUrl.innerText = back
 
-        let displayKeyGen = () => {
-            if (encryptedKey.value != "") {
-                submitEl.style = "display:block";
-                generateKey.style = "display:none";
-            } else {
-                generateKey.style = "display:block";
-                submitEl.style = "display:none";
+        submitEl.addEventListener("click", () => {
+            try {
+                let key = lk_key_decrypt(encryptedKey.value, new TextEncoder().encode(password.value));
+                localStorage.setItem("encrypted_key", encryptedKey.value);
+                if (rememberPass.checked) {
+                    localStorage.setItem("password", password.value)
+                };
+                let keyp = lk_keypoint(key, "", {
+                    ...linkpkt.obj, // Get an object with the common fields
+                    create: undefined // Don't copy the create stamp field
+                });
+                let new_hash = b64(keyp.hash);
+
+                let html = keyp.toHTML();
+                let pktEl  = range.createContextualFragment(html).firstElementChild;
+                packetsEl.prepend(pktEl);
+
+                let formEl = document.querySelector("#form");
+                let countdown = range.createContextualFragment(`<input type="range" min=1 max=1000 value=100>`).firstElementChild;
+                formEl.appendChild(countdown);
+
+                var id = 0;
+                id = setInterval(() => {
+                    countdown.value = Number(countdown.value) * 1.01 + "";
+                    if (countdown.value == countdown.max) {
+                        clearInterval(id);
+                        send();
+                    }
+                }, 10);
+
+
+                async function send() {
+                    const formData = new FormData();
+                    fetch(vouchUrl, {
+                        body: lk_write(keyp),
+                        method: "POST"
+                    }).then(async response => {
+                        if (!response.ok) {
+                            let body = await response.text();
+                            throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
+                        }
+                        if (backUrl.value!= "") {
+                            window.location = backUrl.value;
+                        } else {
+                            // In theory we could use the location from our packet - but its a TODO to specify the exact path encoding rules
+                            let loc = response.headers.get("location");
+                            if (!useFullUrl.checked) {
+                                loc = loc.split("?")[0];
+                            }
+                            window.location = loc;
+                        }
+                    }).catch(logerr);
+                }
+
+            } catch (e) {
+                logerr(e);
             }
-        }
-        displayKeyGen();
-        encryptedKey.addEventListener("input", displayKeyGen);
-        generateKey.addEventListener("click", async () => {
-            if (encryptedKey.value != "" && !confirm("destroy key?")) {
-                return false;
-            }
-            if (password.value == "") {
-                password.value = prompt("password");
-            }
-            let bytes = new TextEncoder().encode(password.value);
-            let tmp = generateKey.value;
-            generateKey.value = "⏳";
-            await new Promise(resolve => setTimeout(resolve, 100));
-            encryptedKey.value = lk_key_encrypt(lk_keygen(), bytes);
-            generateKey.value = tmp;
-            displayKeyGen();
             return false;
         });
 
-        submitEl.addEventListener("click", () => {
-                try {
-                    let key = lk_key_decrypt(encryptedKey.value, new TextEncoder().encode(password.value));
-                    localStorage.setItem("encrypted_key", encryptedKey.value);
-                    if (rememberPass.checked) {
-                        localStorage.setItem("password", password.value)
-                    };
-                    let keyp = lk_keypoint(key, "", {
-                        ...linkpkt.obj, // Get an object with the common fields
-                        create: undefined // Don't copy the create stamp field
-                    });
-                    let new_hash = b64(keyp.hash);
-
-                    let html = keyp.toHTML();
-                    let formEl = document.querySelector("#form");
-                    formEl.insertAdjacentHTML("afterend",keyp.toHTML());
-                    let countdown = range.createContextualFragment(`<input type="range" min=1 max=1000 value=100>`).firstElementChild;
-                    formEl.insertAdjacentElement("afterend",countdown);
-
-                    var id = 0;
-                    id = setInterval(() => {
-                        countdown.value = Number(countdown.value) *1.01 + "";
-                        if (countdown.value == countdown.max){
-                            clearInterval(id);
-                            send();
-                    }},10);
-
-                                        
-                    async function send (){
-                        const formData = new FormData();
-                        fetch(vouchUrl, {
-                            body: lk_write(keyp),
-                            method: "POST"
-                        }).then(async response => {
-                            if (!response.ok) {
-                                let body = await response.text();
-                                throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
-                            }
-                            if (backUrl.innerText != "") {
-                                window.location = backUrl.textValue;
-                            }else {
-                                // In theory we could use the location from our packet - but its a TODO to specify the exact path encoding rules
-                                let loc = response.headers.get("location");
-                                if (!useFullUrl.checked){
-                                    loc =  loc.split("?")[0];
-                                }
-                                window.location = loc;
-                            }
-                        }).catch(logerr);
-                    }
-                        
-                    } catch (e) {
-                        logerr(e);
-                    }
-                return false;
-            });
-
-            for (let pkt of pkts) {
-                let html = pkt.toHTML();
-                let el = range.createContextualFragment(html).firstElementChild;
-                document.body.appendChild(el);
-            }
+        for (let pkt of pkts) {
+            let html = pkt.toHTML();
+            let el = range.createContextualFragment(html).firstElementChild;
+            packetsEl.appendChild(el);
         }
+    }
 
-        async function run() {
-            init();
-            const response = await fetch(quarantinePktsUrl)
-                .then(load_pkts)
-                .then(display_pkts);
-        }
-        run().catch((e) => console.error(e, e.toString && e.toString(), e.toJSON && e.toJSON()));
+    async function run() {
+        init();
+        const response = await fetch(quarantinePktsUrl)
+            .then(load_pkts)
+            .then(display_pkts);
+    }
+
+    run().catch((e) => console.error(e, e.toString && e.toString(), e.toJSON && e.toJSON()));
 </script>
 
 </html>

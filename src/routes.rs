@@ -1,5 +1,5 @@
 
-use std::{sync::Arc};
+use std::{ path::PathBuf};
 use crate::{
     reqtypes::{pkts_data::Pkts, Result, *},
     utils::{ *},
@@ -7,7 +7,7 @@ use crate::{
 };
 use anyhow::{Context};
 use linkspace::{
-    prelude::{LkHash, NetPkt, Point, PointExt ,NetPktExt, NetPktBox},
+    prelude::{NetPkt, Point, PointExt ,NetPktExt, NetPktPtr},
     runtime::{ lk_save_all, lk_get_hash, lk_get_all}, lk_process, lk_eval, point::lk_write,
 };
 use rocket::{
@@ -21,7 +21,7 @@ use rocket::{
     tokio::{fs::File },
     *, fs::NamedFile,
 };
-use tokio::{io::{AsyncWriteExt }, task::{ spawn_blocking}};
+use tokio::{io::{AsyncWriteExt }};
 
 
 
@@ -213,23 +213,35 @@ enum Upload{
 
 #[post("/<ipath..>?pkts",format="bytes", data = "<pkts>",rank=300)]
 async fn save_pkts(_w:Webbit, ipath: AnyIPath, pkts: Pkts<'_>) -> Result<Upload>{
-    let (head, rest) = pkts.0.split_first().context("missing pkts")?;
-    if !rest.iter().all(|p| p.is_datapoint()) { return Ok(Upload::BadReq("currently only a list of datapoints is accepted"))}
+    let mut it = pkts.into_iter();
+    let head = it.next().context("missing pkts")?;
+    if !it.all(|p| p.is_datapoint()) { return Ok(Upload::BadReq("currently only a list of datapoints is accepted"))}
     match head.ipath(){
         None => return Ok(Upload::BadReq("first packet has no path")),
         Some(p) if p != &*ipath.0 =>return Ok(Upload::BadReq("using wrong path")),
         _ => {}
     }
 
-    if head.pubkey().is_none() && pkts.0.len() <2 { return Ok(Upload::BadReq("a empty linkpoint is not accepted"))}
-    write_quarantine(&pkts.0).await?;
+    if head.pubkey().is_none() && pkts.len <2 { return Ok(Upload::BadReq("a empty linkpoint is not accepted"))}
+    let qpath = pkts.quarantine().await?;
     if head.pubkey().is_none(){
         let qh = QUARANTINE.get().unwrap();
         let qh = qh[0].to_absolute("http", qh).unwrap();
         let hash = head.hash();
         return Ok(Upload::Created(Created::new(uri!(qh,quarantine(Hash::new(hash),None::<String>)).to_string())))
     };
-    vouch_cmd(pkts.0, head.hash()).await
+    if !vouch_cmd(head,qpath).await?{
+        return Ok(Upload::NoVouch("Computer says no"));
+    }
+    let refs : Vec<&dyn NetPkt> = pkts.into_iter().map(|o| o as &dyn NetPkt).collect();
+    tokio::task::block_in_place(move || -> anyhow::Result<()>{
+        let local_lk = Lk.tlk();
+        let new_pkts = lk_save_all(&local_lk, &refs)?;
+        let txn_head = lk_process(&local_lk).get();
+        tracing::info!(new_pkts,txn_head, "save ok");
+        Ok(())
+    })?;
+    Ok(created_link(head))
 }
 
 // The 'data' param exists mostly to avoid botnets spamming post requests.
@@ -331,22 +343,21 @@ async fn vouch(
     hash: Hash,
     pkts: Pkts<'_>,
 ) -> Result<Upload> {
-    // this should prob be request guards.
-    let pkts = pkts.0;
-    if pkts.len() != 1 {
+    if pkts.len != 1 {
         return Ok(Upload::BadReq("expected 1 packet"));
     }
-
-    let keypoint = &pkts[0];
+    
+    let keypoint = pkts.into_iter().next().unwrap();
     use linkspace::prelude::{PktFmt};
     if !keypoint.is_keypoint() {
         return Ok(Upload::BadReq("vouching is done with a keypoint"));
     }
 
-    let pktbytes = tokio::fs::read(format!("./quarantine/{}", hash.0)).await?;
-    let mut it = iter_pkts_unchecked(&pktbytes);
+    let quarantine_path :PathBuf = format!("./quarantine/{}", hash.0).into();
+    let pktbytes = tokio::fs::read(&quarantine_path).await?;
+    let mut it = iter_pkts_unchecked_alligned(&pktbytes);
     let linkpoint = it.next().context("quarantine error")?;
-    tracing::trace!(linkpoint=%PktFmt(&linkpoint),keypoint=%PktFmt(&keypoint),"checking equality");
+    tracing::trace!(linkpoint=%PktFmt(linkpoint),keypoint=%PktFmt(keypoint),"checking equality");
     if linkpoint.group() != keypoint.group()
         || linkpoint.domain() != keypoint.domain()
         || linkpoint.path() != keypoint.path()
@@ -355,20 +366,29 @@ async fn vouch(
         return Ok(Upload::BadReq("your packet does not match the original"));
     }
     // This is dumb
-    let mut pkts = vec![pkts[0].clone()];
-    pkts.extend(it);
-    let arc = Arc::from(pkts);
-    vouch_cmd(&arc, hash.0).await
+    if !vouch_cmd(&keypoint,quarantine_path).await?{
+        return Ok(Upload::NoVouch("Computer says no"));
+    }
+
+    let mut refs : Vec<&dyn NetPkt>= vec![&*keypoint as &dyn NetPkt];
+    refs.extend(it.map(|o| o as &dyn NetPkt));
+    tokio::task::block_in_place(move || -> anyhow::Result<()>{
+        let local_lk = Lk.tlk();
+        let new_pkts = lk_save_all(&local_lk, &refs)?;
+        let txn_head = lk_process(&local_lk).get();
+        tracing::info!(new_pkts,txn_head, "save ok");
+        Ok(())
+    })?;
+    Ok(created_link(keypoint))
 }
 
-async fn vouch_cmd(pkts: &Arc<[NetPktBox]>, quarantine: LkHash) -> Result<Upload> {
+async fn vouch_cmd(keyp: &NetPktPtr, quarantine: PathBuf) -> Result<bool> {
     use std::process::Stdio;
     use tokio::process::Command;
-    let keyp = &pkts[0];
     assert!(keyp.is_keypoint());
     let mut cmd = Command::new("./vouch")
         .arg(format!("{}", keyp.get_pubkey()))
-        .arg(format!("./quarantine/{}", quarantine))
+        .arg(quarantine)
         .stdin(Stdio::piped())
         .spawn()?;
     let mut stdin = cmd.stdin.take().unwrap();
@@ -376,27 +396,15 @@ async fn vouch_cmd(pkts: &Arc<[NetPktBox]>, quarantine: LkHash) -> Result<Upload
     let _shutdown = stdin.shutdown().await?;
     std::mem::drop(stdin);
     let result = cmd.wait().await?;
-    eprintln!("Exec : {result:#?}");
-    if !result.success(){
-        return Ok(Upload::NoVouch("Computer says no"));
-    }
-    let pkt_arc = pkts.clone();
-    spawn_blocking(move || -> anyhow::Result<()>{
-        let refs = pkt_arc
-            .iter()
-            .map(|p| &*p as &dyn NetPkt)
-            .collect::<Vec<_>>();
-        let local_lk = Lk.tlk();
-        let new_pkts = lk_save_all(&local_lk, &refs)?;
-        let txn_head = lk_process(&local_lk).get();
-        tracing::info!(new_pkts,txn_head, "save ok");
-        Ok(())
-    }).await??;
-    
-    let path = AnyIPath::new(keyp.get_ipath()).cast();
+    eprintln!("Exec : {result:?}");
+    Ok(result.success())
+}
 
+fn created_link(key_point:&NetPktPtr) -> Upload{
+    let path = AnyIPath::new(key_point.get_ipath()).cast();
     let webbit = WEBBIT.get().unwrap();
     let webbit = webbit[0].to_absolute("http",webbit).unwrap();
-    Ok(Upload::Created(Created::new(uri!(webbit,view_any(path, Some(Hash::new(keyp.hash())))).to_string())))
+    Upload::Created(Created::new(uri!(webbit,view_any(path, Some(Hash::new(key_point.hash())))).to_string()))
 }
+
 
