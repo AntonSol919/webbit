@@ -225,9 +225,10 @@
         } = get_consts();
 
         let pkts = [];
-        while (bytes.length != 0) {
-            let [p, rest] = lk_read(bytes);
-            bytes = rest;
+        let b = bytes.subarray();
+        while (b.length != 0) {
+            let [p, rest] = lk_read(b);
+            b= rest;
             pkts.push(p);
         }
         if (b64(pkts[0].hash) != linkp_hash) {
