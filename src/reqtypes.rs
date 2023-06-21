@@ -64,7 +64,7 @@ pub struct HashBody {
 pub mod pkts_data {
     use std::path::PathBuf;
 
-    use linkspace::prelude::{  NetPktPtr };
+    use linkspace::prelude::{  NetPktPtr, NetPktExt };
 
     pub struct Pkts<'o>{
         bytes: &'o [u8],
@@ -74,8 +74,19 @@ pub mod pkts_data {
         pub fn into_iter(&self) -> impl Iterator<Item=&'o NetPktPtr> + '_{
             iter_pkts_unchecked_alligned(self.bytes)
         }
+        // We could have used a tempfile for the Pkts request guard so this is only a move -  don't know if that is worth it.
         pub async fn quarantine(&self) -> std::io::Result<PathBuf>{
-            todo!()
+            use tokio::io::AsyncWriteExt;
+            let hash = self.into_iter().next().unwrap().hash();
+            let path = format!("./quarantine/{}", hash).into();
+            let mut file = tokio::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+                .await?;
+            file.write_all(&self.bytes).await?;
+            file.flush().await?;
+            Ok(path)
         }
     }
 
