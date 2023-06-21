@@ -117,6 +117,13 @@ function takeObject(idx) {
     dropObject(idx);
     return ret;
 }
+/**
+* @returns {LkConsts}
+*/
+export function get_consts() {
+    const ret = wasm.get_consts();
+    return LkConsts.__wrap(ret);
+}
 
 function getArrayU8FromWasm0(ptr, len) {
     ptr = ptr >>> 0;
@@ -137,14 +144,6 @@ function addBorrowedObject(obj) {
     heap[--stack_pointer] = obj;
     return stack_pointer;
 }
-/**
-* @returns {LkConsts}
-*/
-export function get_consts() {
-    const ret = wasm.get_consts();
-    return LkConsts.__wrap(ret);
-}
-
 /**
 */
 export function main() {

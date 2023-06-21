@@ -1,6 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export function __wbg_lkconsts_free(a: number): void;
+export function get_consts(): number;
+export function lkconsts_PUBLIC(a: number, b: number): void;
 export function __wbg_pkt_free(a: number): void;
 export function pkt_toString(a: number, b: number): void;
 export function pkt_toHTML(a: number, b: number, c: number): void;
@@ -48,9 +51,6 @@ export function link_tag(a: number, b: number): void;
 export function __wbg_jserr_free(a: number): void;
 export function jserr_toJSON(a: number): number;
 export function jserr_toString(a: number, b: number): void;
-export function __wbg_lkconsts_free(a: number): void;
-export function get_consts(): number;
-export function lkconsts_PUBLIC(a: number, b: number): void;
 export function main(): void;
 export function lk_datapoint(a: number, b: number): void;
 export function __wbg_signingkey_free(a: number): void;

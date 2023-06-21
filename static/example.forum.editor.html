@@ -7,8 +7,33 @@
 
 <body>
     <form>
+        <label> This is an example of a self-uploading forum. Don't like the style, comment structure, or
+            desperatly want to include background music?
+            Just edit this webpage and POST it to a different URL.
+        </label>
+        <hr>
+        <!--
+             You can try and upload anything by posting it to a URL.
+             This returns a new quarantine url where you/the user has to vouch for the content with the private key. 
+             This page is an example where someone writes a post, and the final upload contains the html & js that:
+
+             - displays the post,
+             - allows a reader to post comments,
+             - loads all comments. 
+
+             There are many alternative setups that could be built.
+             With a '&hash=..' you can GET the exact page, even when a new thing is written to this path. 
+             With a '&pubkey=..' you can GET the latest item vouched for by that pubkey
+             With a &list / &tree you can get a list of known entries.
+             
+             One option is to only display comments that have been vouched for by an administrator.
+             another option/extention would be to add <script src="...?pubkey=..." >.
+             This makes the page 'updatable' by someone updating the script. 
+
+             (This example.forum.editor.html is pinned in place (set in the /static dir) so a request without &hash will always return this page)
+        -->
         <div>
-            <label>Community </label>
+            <label>Community</label>
             <input type="text" placeholder="community" id="community" value="webbit" />
         </div>
         <div>
@@ -44,9 +69,11 @@
                 
                 return 4294967296 * (2097151 & h2) + (h1 >>> 0);
             };
-            let post_id= cyrb53(title + text)
+            let post_id= cyrb53(title + text) >> 8
 
-            let dest = window.location.origin + `/basic_forum/${community}/${post_id}/${title}.html`
+            // with '?data' the body is encoded into linkspace on the server side. 
+            // you can use ?pkts to upload linkspace packets
+            let dest = window.location.origin + `/example.forum/${community}/${post_id}/${title}.html?data`
             let body = build_post_page(community, title, text, post_id);
             fetch(dest, {
                     body,
@@ -71,7 +98,7 @@
                     let commentsUrl = window.location.origin + window.location.pathname + "/comments";
                     function submit() {
                         let body = document.querySelector("#text").value;
-                        fetch(commentsUrl , {
+                        fetch(commentsUrl +"?data", {
                                 body,
                                 method: "POST"
                             })
@@ -80,7 +107,7 @@
                                     let body = await response.text();
                                     throw Error(`Server returned ${response.status}: ${response.statusText} - ${body}`);
                                 }
-                                window.open(response.headers.get("location") + `&back=${window.location.href})`)
+                                window.open(response.headers.get("location") + `?back=${window.location.href}`)
                             })
                             .catch(e => console.warn(e) && alert(e));
                         return false;
@@ -88,6 +115,9 @@
                      document.querySelector("#submit").addEventListener("click", submit);
                     const range = document.createRange();
 
+                    // Here we're loading _all_ things commented.
+                    // There are a lot of alternative strategies. 
+                    // e.g. You could add an 'admin' key that publishes a whitelist of accepted comments and only load those. 
                     async function load_comments(){
                         fetch(commentsUrl + "?list", {headers: { "Accept": "application/json"  }})
                         .then(async (response) => {
@@ -101,18 +131,19 @@
                                 fetch(commentsUrl+"?hash="+comment.hash).then(async (response) => {
                                     el.innerHTML = await response.text() ;
                                 });
-                                debugger;
                             }
                             console.log(body);
-                            debugger;
                         })
                         .catch(e => console.warn(e) && alert(e));
                     }
                     load_comments();
                 }
+                // Some 'whitelist' trick goes for this. 
                 // At some point It would be much clearer if we'd use <script src=...?pubkey=...>.
                 // That way, each script can be updated seperatly 
-                return `<thing>${main.toString()} ;main();</thing>`.replace(/thing/g, "script");
+
+                // NOTE: I used '_script_' and replace it because my IDE goes bad on a plain 'script' tag 
+                return `<_script_>${main.toString()} ;main();</_script_>`.replace(/_script_/g, "script");
             }
             let str = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head>
          </head>

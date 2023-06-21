@@ -278,6 +278,9 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly __wbg_lkconsts_free: (a: number) => void;
+  readonly get_consts: () => number;
+  readonly lkconsts_PUBLIC: (a: number, b: number) => void;
   readonly __wbg_pkt_free: (a: number) => void;
   readonly pkt_toString: (a: number, b: number) => void;
   readonly pkt_toHTML: (a: number, b: number, c: number) => void;
@@ -325,9 +328,6 @@ export interface InitOutput {
   readonly __wbg_jserr_free: (a: number) => void;
   readonly jserr_toJSON: (a: number) => number;
   readonly jserr_toString: (a: number, b: number) => void;
-  readonly __wbg_lkconsts_free: (a: number) => void;
-  readonly get_consts: () => number;
-  readonly lkconsts_PUBLIC: (a: number, b: number) => void;
   readonly main: () => void;
   readonly lk_datapoint: (a: number, b: number) => void;
   readonly __wbg_signingkey_free: (a: number) => void;

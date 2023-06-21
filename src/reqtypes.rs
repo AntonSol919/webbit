@@ -352,6 +352,7 @@ impl ReqQuery {
                 }
             },
         }
+        
         Ok(ReqQuery { query, hash, path, info})
     }
 }
@@ -377,6 +378,7 @@ impl<'r> FromRequest<'r> for LkQuery<'r> {
                     rq = rq.add_stmnt(key, val).with_context(|| format!("{key} (={val})"))?;
                 }
             }
+            
             Ok(rq)
         });
         match r {

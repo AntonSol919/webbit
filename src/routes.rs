@@ -170,7 +170,10 @@ async fn view_any(_w:Webbit,ipath:AnyIPath,hash:Option<Hash>,q : LkQuery<'_>, lk
 }
 
 async fn _view(_w:Webbit, q: &ReqQuery, uploader: bool, lk: &State<Lk>) -> Result<View> {
-    let pkt = {read_pkt(q, lk.tlk())? };
+    let mut rq = q.clone(); // this is a bit inefficient
+    rq.query = linkspace::lk_query_push(rq.query, "path_len", "=", &[rq.path.0.len() as u8])?;
+
+    let pkt = {read_pkt(&rq, lk.tlk())? };
     let r = match pkt{
         Some(Either::Left(data)) if !uploader => {
             let ext = q.path.0.last().rsplit(|i| *i ==b'.').next();

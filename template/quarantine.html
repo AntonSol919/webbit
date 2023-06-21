@@ -178,7 +178,7 @@
     const linkp_hash = loc.pathname.substring(1);
     const params = new URLSearchParams(loc.search);
     const back = params.get('back');
-    const quarantinePktsUrl = loc + "?pkts";
+    const quarantinePktsUrl = loc.origin + loc.pathname + "?pkts";
     const vouchUrl = `${loc.origin}/vouch/${linkp_hash}`;
 
     let {
