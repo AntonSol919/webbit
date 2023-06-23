@@ -4,6 +4,6 @@ address = "83.172.162.31"
 ident = "Webbit 0.1"
 
 [default]
-# Add "127.0.0.1	quarantine.local" to your /etc/hosts 
+# Add "127.0.0.1	quarantine.local" to your /etc/hosts  to make this work
 quarantine_domain = ["quarantine.local:8000"]
 webbit_domain = ["127.0.0.1:8000"]

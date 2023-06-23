@@ -43,7 +43,7 @@ justify-content: center;
 `
 
     const editor = `
-<div comment="this div will be automatically dropped on upload" id="webbit" style="${out_style}" contentEditable="false">
+<div comment="this div is automatically dropped on upload" id="webbit" style="${out_style}" contentEditable="false">
 <div style="${form_style}"> 
 
   <label>Path:</label> <div contenteditable id="webbitPath" style="max-width:50vw;overflow:scroll"> ${window.location.pathname}</div>

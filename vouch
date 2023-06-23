@@ -6,16 +6,17 @@ set -eux -o pipefail
 PUBKEY=$1
 QUARANTINE_FILE=$2
 echo $PUBKEY is vouching for $QUARANTINE_FILE
+
 # the keypoint packet is written to stdin.
 # I.e. if the `lk` (linkspace cli) is installed: 
 if [ -x "$(command -v lk )" ]; then 
     # The path we print here is the ABE encoded string, not the URI encoded one
-    lk pktf "Its result will be something like [path:str]?hash=[hash:str]"
+    lk pktf "Its resulting url is something like [path:str]?hash=[hash:str]"
 fi
 
-# The quarantine has already been copied.
+# The quarantine is copied into webbit memory - you can delete the file
 # You can delete or move it.
-false || rm "$2" || true
+rm "$2" || true
 
-# any non zero return value will deny the packet
+# any non zero return value denies the packet
 exit 0

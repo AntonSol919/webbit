@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <script id="webbitScript" src="/uploader.js" comment="you can safely remove this line - its only required for static pages to enable ?uploader " ></script>
+    </head>
+    <body>
+        <h1>An example page</h1>
+        <p>
+            This is an example page. There is nothing interesting here.
+            Add <a href="?uploader">'uploader'</a> to the search paramter.
+        </p>
+
+        <p>
+            Once you see the blue bar, you should edit the destination path.
+        </p>
+        <p>
+            Next you can use the 'Edit' checkbox to edit this text, or use F12 to use the browser tools.
+        </p>
+        <p>
+            You can do the ?uploader trick for any html page on webbit. Find a page you like and add 'uploader' to the query string to <s>steal</s> copy its design.
+        </p>
+
+        <p>
+            Once you're satified - press upload. You'll be taken to quarantine. Here you input/generate your identity to vouch for the content you're uploading.
+        </p>
+
+        <p>
+            You can also add javascript. That sounds dangerous, but its not more dangerous than any other unkown website you find with google.
+            Javascript is sandboxed to this subdomain, and there are no cookies or identities to steal from webbit.
+        </p>
+        <p>
+            Javascript allows us to get meta. We can for instance create a forum thread with comments:<a href="/example.forum.editor.html">/example.forum.editor.html</a>.
+        </p>
+        <p>
+            Think the editor needs better styling? Want to support nested comments? - just add '?uploader' and build it. (or send a POST request to the destination url ending with ?data)
+        </p>
+    </body>
+</html>

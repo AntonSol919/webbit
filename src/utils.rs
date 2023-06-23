@@ -24,7 +24,6 @@ pub fn read_pkt(q:&ReqQuery,lk:linkspace::Linkspace) -> anyhow::Result<Option<Ei
             let mut hash = PRIVATE; // [0;32]
             let mut stamp = Stamp::ZERO;
             // Our ibranch=0 means we only check the first of every 'branch', i.e.  uniq (path,pubkey) pairs.
-            // We only want to the latest 
             lk_get_all(&lk, &query, &mut |pkt| {
                 if *pkt.get_create_stamp() > stamp{
                     stamp = *pkt.get_create_stamp();
@@ -32,7 +31,7 @@ pub fn read_pkt(q:&ReqQuery,lk:linkspace::Linkspace) -> anyhow::Result<Option<Ei
                 }
                 return false
             })?;
-            if hash == PUBLIC { return Ok(None)}
+            if hash == PRIVATE { return Ok(None)}
             lk_get_hash(&lk, hash, &mut |o| o.as_netbox())?.unwrap()
         },
         Some(hash) => {

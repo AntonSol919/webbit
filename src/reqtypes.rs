@@ -132,6 +132,7 @@ pub mod pkts_data {
 }
 
 #[derive(Debug, Clone)]
+/// A mapping between URL encoded paths and linkspace.
 pub struct LkPath<EXT>(pub IPathBuf, PhantomData<EXT>);
 impl<A> LkPath<A> {
     pub fn any(self) -> AnyIPath {
@@ -182,6 +183,10 @@ pub fn ipath_uri_display(p: &SPath) -> Option<String> {
 impl<EXT: IsExt> FromSegments<'_> for LkPath<EXT> {
     type Error = anyhow::Error;
 
+    /** The mapping between paths is incomplete:
+    - linkspace paths accept any bytes (including null)
+    - Segments have no length limit - linkspace can be upto 8 components and 240 bytes in total.
+    **/
     fn from_segments(segments: Segments<'_, Path>) -> anyhow::Result<Self> {
         let ip = IPathBuf::try_from_iter(segments.into_iter().map(|v| v.as_bytes()))?;
         anyhow::ensure!(EXT::is_ext(ip.last()), "wrong filetype");
